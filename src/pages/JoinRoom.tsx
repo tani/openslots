@@ -226,7 +226,7 @@ export function JoinRoom(props: { id?: string }) {
                 </div>
                 <button
                   type="button"
-                  class="btn btn-success w-100 fw-bold mb-4"
+                  class="btn btn-primary w-100 fw-bold mb-4"
                   onClick={handlePublish}
                 >
                   Publish availability
