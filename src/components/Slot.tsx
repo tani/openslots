@@ -24,7 +24,7 @@ export function Slot(props: {
   return (
     <button
       type="button"
-      class="w-full h-6 border border-ink/10"
+      class="slot-button"
       style={{ background: background.value }}
       onMouseDown={() => props.onMouseDown(props.slotId)}
       onMouseEnter={() => props.onMouseEnter(props.slotId)}

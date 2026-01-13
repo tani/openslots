@@ -1,7 +1,5 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { createGenerator } from "unocss";
-import unoConfig from "./uno.config";
 
 const OUTDIR = "dist";
 const ENTRY = "src/index.tsx";
@@ -22,13 +20,6 @@ const html = `<!doctype html>
 `;
 
 async function build() {
-  const uno = createGenerator(unoConfig);
-  const sources: string[] = [];
-  for (const path of new Bun.Glob("src/**/*.{ts,tsx}").scanSync(".")) {
-    sources.push(await Bun.file(path).text());
-  }
-  const { css } = await uno.generate(sources.join("\n"), { minify: true });
-
   const result = await Bun.build({
     entrypoints: [ENTRY],
     outdir: OUTDIR,
@@ -44,8 +35,36 @@ async function build() {
     process.exit(1);
   }
 
+  // Copy Bootswatch Brite theme
+  const bootswatchCss = await Bun.file(
+    "node_modules/bootswatch/dist/brite/bootstrap.min.css"
+  ).text();
+
+  // Add custom CSS for the app
+  const customCss = `
+    /* Custom styles for When2Nostr */
+    :root {
+      --ink: #11120f;
+      --paper: #f5f1ea;
+      --moss: #2b5f3f;
+      --sand: #d7c9a8;
+    }
+
+    .slot-button {
+      width: 100%;
+      height: 1.5rem;
+      border: 1px solid rgba(17, 18, 15, 0.1);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .slot-button:hover {
+      border-color: rgba(17, 18, 15, 0.3);
+    }
+  `;
+
   await Bun.write(join(OUTDIR, "index.html"), html);
-  await Bun.write(join(OUTDIR, "index.css"), css);
+  await Bun.write(join(OUTDIR, "index.css"), bootswatchCss + customCss);
 }
 
 function serve() {

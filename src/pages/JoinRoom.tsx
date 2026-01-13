@@ -114,9 +114,9 @@ export function JoinRoom(props: { id?: string }) {
   const selectedCount = useComputed(() => currentSelections.value.size);
   const participantList = useComputed(() =>
     Array.from(responses.value.entries()).map(([pubkey, entry]) => (
-      <div class="flex items-center justify-between" key={pubkey}>
+      <div class="d-flex align-items-center justify-content-between" key={pubkey}>
         <span>{entry.name}</span>
-        <span class="text-ink/60">{entry.slots.size}</span>
+        <span class="text-muted">{entry.slots.size}</span>
       </div>
     )),
   );
@@ -132,57 +132,62 @@ export function JoinRoom(props: { id?: string }) {
 
   if (status.value === "missing") {
     return (
-      <main class="px-6 py-10">
-        <h1 class="text-2xl font-semibold text-ink">Room not found</h1>
-        <p class="text-ink/70">Double-check the link or create a new room.</p>
+      <main class="container py-5 text-center">
+        <h1 class="display-4 fw-bold text-dark mb-3">Room not found</h1>
+        <p class="lead text-muted">Double-check the link or create a new room.</p>
       </main>
     );
   }
 
   return (
-    <main class="px-6 py-8 space-y-6">
-      <header class="space-y-2">
-        <h1 class="text-3xl font-semibold text-ink">{title}</h1>
-        <p class="text-sm text-ink/70">Timezone: {tz}</p>
+    <main class="container py-4">
+      <header class="mb-4 pb-3 border-bottom">
+        <h1 class="display-5 fw-bold text-dark mb-2">{title}</h1>
+        <p class="text-muted mb-0">Timezone: {tz}</p>
       </header>
 
       {status.value === "loading" ? (
-        <p class="text-ink/70 italic">Synchronizing with Nostr relays...</p>
+        <p class="text-muted fst-italic">Synchronizing with Nostr relays...</p>
       ) : (
-        <div class="grid lg:grid-cols-[1fr_18rem] gap-6">
-          <Grid
-            dates={grid.value.dateList}
-            times={grid.value.timeList}
-            slotByLocalKey={grid.value.slotByLocalKey}
-          />
-          <Sidebar title="Your response">
-            <label class="grid gap-2 text-sm">
-              Name
-              <input
-                class="px-3 py-2 rounded-lg border border-ink/20 bg-white"
-                value={name}
-                onInput={(e) => {
-                  name.value = e.currentTarget.value;
-                }}
-              />
-            </label>
-            <div class="text-xs text-ink/60">
-              Selected {selectedCount} slots
-            </div>
-            <button
-              type="button"
-              class="w-full py-2 rounded-lg bg-moss text-white font-semibold"
-              onClick={handlePublish}
-            >
-              Publish availability
-            </button>
-            <div class="space-y-3">
-              <div class="text-xs uppercase tracking-[0.2em] text-ink/50">
-                Participants
+        <div class="row g-4">
+          <div class="col-lg-9">
+            <Grid
+              dates={grid.value.dateList}
+              times={grid.value.timeList}
+              slotByLocalKey={grid.value.slotByLocalKey}
+            />
+          </div>
+          <div class="col-lg-3">
+            <Sidebar title="Your response">
+              <div class="mb-3">
+                <label class="form-label" htmlFor="input-name">Name</label>
+                <input
+                  id="input-name"
+                  class="form-control"
+                  value={name}
+                  onInput={(e) => {
+                    name.value = e.currentTarget.value;
+                  }}
+                />
               </div>
-              <div class="space-y-1 text-sm">{participantList}</div>
-            </div>
-          </Sidebar>
+              <div class="small text-muted mb-3">
+                Selected {selectedCount} slots
+              </div>
+              <button
+                type="button"
+                class="btn btn-success w-100 fw-bold mb-4"
+                onClick={handlePublish}
+              >
+                Publish availability
+              </button>
+              <div class="d-grid gap-2">
+                <div class="small text-uppercase fw-bold text-muted" style="letter-spacing: 0.1em;">
+                  Participants
+                </div>
+                <div class="small">{participantList}</div>
+              </div>
+            </Sidebar>
+          </div>
         </div>
       )}
     </main>
