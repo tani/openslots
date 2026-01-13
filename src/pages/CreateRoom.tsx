@@ -1,5 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { useState } from "preact/hooks";
+import { useComputed, useSignal } from "@preact/signals";
 import { useLocation } from "preact-iso";
 import { publishRoom } from "../utils/nostr";
 import { generateSlots } from "../utils/temporal";
@@ -7,30 +7,53 @@ import { generateSlots } from "../utils/temporal";
 export function CreateRoom() {
   const location = useLocation();
   const today = Temporal.Now.plainDateISO();
-  const [title, setTitle] = useState("Meeting");
-  const [startDate, setStartDate] = useState(today.toString());
-  const [days, setDays] = useState(7);
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("18:00");
-  const [tz, setTz] = useState(
-    Intl.DateTimeFormat().resolvedOptions().timeZone,
-  );
-  const [loading, setLoading] = useState(false);
+  const title = useSignal("Meeting");
+  const startDate = useSignal(today.toString());
+  const days = useSignal(7);
+  const startTime = useSignal("09:00");
+  const endTime = useSignal("18:00");
+  const tz = useSignal(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const loading = useSignal(false);
+
+  const totalSlots = useComputed(() => {
+    try {
+      // Very rough estimate of slots based on time range and days
+      const start = Temporal.PlainTime.from(startTime.value);
+      const end = Temporal.PlainTime.from(endTime.value);
+      const diffMinutes =
+        end.hour * 60 + end.minute - (start.hour * 60 + start.minute);
+      if (diffMinutes <= 0) return 0;
+      return Math.floor(diffMinutes / 15) * days.value;
+    } catch {
+      return 0;
+    }
+  });
 
   const handleCreate = async (event: Event) => {
     event.preventDefault();
-    setLoading(true);
+    loading.value = true;
 
-    const plainStart = Temporal.PlainDate.from(startDate);
-    const options: string[] = [];
-    for (let i = 0; i < days; i += 1) {
-      const day = plainStart.add({ days: i });
-      options.push(...generateSlots(day.toString(), startTime, endTime, tz));
+    try {
+      const plainStart = Temporal.PlainDate.from(startDate.value);
+      const options: string[] = [];
+      for (let i = 0; i < days.value; i += 1) {
+        const day = plainStart.add({ days: i });
+        options.push(
+          ...generateSlots(
+            day.toString(),
+            startTime.value,
+            endTime.value,
+            tz.value,
+          ),
+        );
+      }
+
+      const roomId = crypto.randomUUID();
+      await publishRoom({ roomId, title: title.value, options });
+      location.route(`/room/${roomId}`);
+    } finally {
+      loading.value = false;
     }
-
-    const roomId = crypto.randomUUID();
-    await publishRoom({ roomId, title, options });
-    location.route(`/room/${roomId}`);
   };
 
   return (
@@ -54,7 +77,9 @@ export function CreateRoom() {
           <input
             class="px-3 py-2 rounded-lg border border-ink/20 bg-white"
             value={title}
-            onInput={(event) => setTitle(event.currentTarget.value)}
+            onInput={(e) => {
+              title.value = e.currentTarget.value;
+            }}
           />
         </label>
 
@@ -65,7 +90,9 @@ export function CreateRoom() {
               type="date"
               class="px-3 py-2 rounded-lg border border-ink/20 bg-white"
               value={startDate}
-              onInput={(event) => setStartDate(event.currentTarget.value)}
+              onInput={(e) => {
+                startDate.value = e.currentTarget.value;
+              }}
             />
           </label>
           <label class="grid gap-2 text-sm">
@@ -76,7 +103,9 @@ export function CreateRoom() {
               max={30}
               class="px-3 py-2 rounded-lg border border-ink/20 bg-white"
               value={days}
-              onInput={(event) => setDays(Number(event.currentTarget.value))}
+              onInput={(e) => {
+                days.value = Number(e.currentTarget.value);
+              }}
             />
           </label>
         </div>
@@ -88,7 +117,9 @@ export function CreateRoom() {
               type="time"
               class="px-3 py-2 rounded-lg border border-ink/20 bg-white"
               value={startTime}
-              onInput={(event) => setStartTime(event.currentTarget.value)}
+              onInput={(e) => {
+                startTime.value = e.currentTarget.value;
+              }}
             />
           </label>
           <label class="grid gap-2 text-sm">
@@ -97,7 +128,9 @@ export function CreateRoom() {
               type="time"
               class="px-3 py-2 rounded-lg border border-ink/20 bg-white"
               value={endTime}
-              onInput={(event) => setEndTime(event.currentTarget.value)}
+              onInput={(e) => {
+                endTime.value = e.currentTarget.value;
+              }}
             />
           </label>
         </div>
@@ -107,16 +140,22 @@ export function CreateRoom() {
           <input
             class="px-3 py-2 rounded-lg border border-ink/20 bg-white"
             value={tz}
-            onInput={(event) => setTz(event.currentTarget.value)}
+            onInput={(e) => {
+              tz.value = e.currentTarget.value;
+            }}
           />
         </label>
+
+        <div class="text-xs text-ink/60 italic">
+          Preview: This will generate {totalSlots} time slots.
+        </div>
 
         <button
           type="submit"
           class="py-3 rounded-xl bg-moss text-white font-semibold disabled:opacity-60"
           disabled={loading}
         >
-          {loading ? "Publishing..." : "Create room"}
+          {loading.value ? "Publishing..." : "Create room"}
         </button>
       </form>
     </main>

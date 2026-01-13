@@ -1,4 +1,4 @@
-import { useEffect, useState } from "preact/hooks";
+import { useSignal, useSignalEffect } from "@preact/signals";
 import {
   currentSelections,
   heatmap,
@@ -12,25 +12,29 @@ export function Grid(props: {
   times: string[];
   slotByLocalKey: Map<string, string>;
 }) {
-  const [dragging, setDragging] = useState(false);
-  const [dragMode, setDragMode] = useState<"add" | "remove">("add");
+  const dragging = useSignal(false);
+  const dragMode = useSignal<"add" | "remove">("add");
 
-  useEffect(() => {
-    const stop = () => setDragging(false);
+  useSignalEffect(() => {
+    const stop = () => {
+      dragging.value = false;
+    };
     window.addEventListener("mouseup", stop);
-    return () => window.removeEventListener("mouseup", stop);
-  }, []);
+    return () => {
+      window.removeEventListener("mouseup", stop);
+    };
+  });
 
   const handleMouseDown = (slotId: string) => {
     const isSelected = currentSelections.value.has(slotId);
-    setDragMode(isSelected ? "remove" : "add");
-    setDragging(true);
+    dragMode.value = isSelected ? "remove" : "add";
+    dragging.value = true;
     updateSelection(slotId, !isSelected);
   };
 
   const handleMouseEnter = (slotId: string) => {
-    if (!dragging) return;
-    updateSelection(slotId, dragMode === "add");
+    if (!dragging.value) return;
+    updateSelection(slotId, dragMode.value === "add");
   };
 
   return (
@@ -68,15 +72,14 @@ export function Grid(props: {
                   />
                 );
               }
-              const count = heatmap.value.get(slotId) ?? 0;
-              const total = participantCount.value || 1;
+
               return (
                 <Slot
                   key={slotId}
                   slotId={slotId}
-                  count={count}
-                  total={total}
-                  selected={currentSelections.value.has(slotId)}
+                  heatmap={heatmap}
+                  participantCount={participantCount}
+                  currentSelections={currentSelections}
                   onMouseDown={handleMouseDown}
                   onMouseEnter={handleMouseEnter}
                 />

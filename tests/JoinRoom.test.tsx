@@ -23,7 +23,7 @@ spyOn(nostrUtils, "publishResponse").mockResolvedValue(
 test("JoinRoom shows loading state then content", async () => {
   render(<JoinRoom id="room-123" />);
 
-  expect(screen.getByText(/Syncing with relays/i)).toBeTruthy();
+  expect(screen.getByText(/Synchronizing with Nostr relays/i)).toBeTruthy();
 
   // Wait for the room to load
   const title = await screen.findByText("Test Room");
