@@ -11,6 +11,7 @@ export function Grid(props: {
   dates: string[];
   times: string[];
   slotByLocalKey: Map<string, string>;
+  blindedSlotMap: Map<string, string>;
 }) {
   const dragging = useSignal(false);
   const dragMode = useSignal<"add" | "remove">("add");
@@ -45,8 +46,10 @@ export function Grid(props: {
           gridTemplateColumns: `120px repeat(${props.dates.length}, minmax(140px, 1fr))`,
         }}
       >
-        <div class="sticky-top bg-white bg-opacity-75 z-10 px-3 py-2 small fw-bold border-bottom" style="backdrop-filter: blur(4px);">
-
+        <div
+          class="sticky-top bg-white bg-opacity-75 z-10 px-3 py-2 small fw-bold border-bottom"
+          style="backdrop-filter: blur(4px);"
+        >
           Time
         </div>
         {props.dates.map((date) => (
@@ -76,10 +79,13 @@ export function Grid(props: {
                 );
               }
 
+              const blindedId = props.blindedSlotMap.get(slotId) ?? slotId;
+
               return (
                 <Slot
                   key={slotId}
                   slotId={slotId}
+                  blindedId={blindedId}
                   heatmap={heatmap}
                   participantCount={participantCount}
                   currentSelections={currentSelections}

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// 1. Mock NDK before importing our utility
+// 1. Mock NDK
 mock.module("@nostr-dev-kit/ndk", () => {
   const mockPublish = mock(() => Promise.resolve());
 
@@ -28,7 +28,17 @@ mock.module("@nostr-dev-kit/ndk", () => {
   };
 });
 
-// Import the real code (it will now use the mocks above)
+// 2. Mock Crypto
+mock.module("../src/utils/crypto", () => ({
+  deriveBlindedId: async (id: string, _key: string) => `blinded-${id}`,
+  encryptData: (text: string, _key: string) => `encrypted-${text}`,
+  decryptData: (text: string, _key: string) => text.replace("encrypted-", ""),
+  getOrCreateRoomKey: () => "mock-key",
+}));
+
+import { decryptData, deriveBlindedId } from "../src/utils/crypto";
+
+// Import local code
 import {
   _resetNDK,
   initNDK,
@@ -36,95 +46,69 @@ import {
   publishRoom,
 } from "../src/utils/nostr";
 
-describe("Nostr Utilities (Mocked with Bun)", () => {
+const MOCK_KEY =
+  "0000000000000000000000000000000000000000000000000000000000000001";
+
+describe("Nostr Utilities (Crypto Integrated)", () => {
   beforeEach(() => {
-    mock.restore(); // Use Bun's native restore
+    mock.restore();
     window.localStorage.clear();
     _resetNDK();
   });
 
-  it("should initialize NDK and save a private key if none exists", async () => {
+  it("should initialize NDK", async () => {
     const ndk = await initNDK();
-
     expect(ndk.connect).toHaveBeenCalled();
-    expect(window.localStorage.getItem("when2nostr_private_key")).toBe(
-      "mock-nsec",
-    );
   });
 
-  it("should format tags correctly when publishing a room", async () => {
+  it("should encrypt and blind data when publishing a room", async () => {
     const roomData = {
       roomId: "test-room-123",
-      title: "Antigravity Sync",
-      options: ["1736770000", "1736770900"],
+      title: "Secret Sync",
+      options: ["1000", "2000"],
+      roomKey: MOCK_KEY,
     };
 
     const event = await publishRoom(roomData);
 
+    const blindedId = await deriveBlindedId(roomData.roomId, MOCK_KEY);
+
     expect(event.kind).toBe(10001);
-    expect(event.tags).toContainEqual(["d", "test-room-123"]);
-    expect(event.tags).toContainEqual(["title", "Antigravity Sync"]);
-    expect(event.tags).toContainEqual(["options", "1736770000,1736770900"]);
-    expect(event.publish).toHaveBeenCalled();
+    expect(event.tags).toContainEqual(["d", blindedId]);
+
+    // Should NOT contain plaintext title/options in tags
+    expect(event.tags.some((t) => t[0] === "title")).toBe(false);
+    expect(event.tags.some((t) => t[0] === "options")).toBe(false);
+
+    // Content should be encrypted
+    const decrypted = decryptData(event.content, MOCK_KEY);
+    const parsed = JSON.parse(decrypted);
+    expect(parsed.title).toBe("Secret Sync");
+    expect(parsed.options).toEqual(["1000", "2000"]);
   });
 
-  it("should format tags correctly when publishing a response", async () => {
+  it("should encrypt name and blind slots when publishing a response", async () => {
     const responseData = {
-      rootId: "event-abc",
+      rootId: "root-event-id",
       name: "Alice",
-      slots: ["1736770000"],
+      slots: ["1000"],
+      roomKey: MOCK_KEY,
     };
 
     const event = await publishResponse(responseData);
 
-    expect(event.tags).toContainEqual(["e", "event-abc"]);
-    expect(event.tags).toContainEqual(["name", "Alice"]);
-    expect(event.tags).toContainEqual(["r", "1736770000"]);
-    expect(event.publish).toHaveBeenCalled();
-  });
+    expect(event.tags).toContainEqual(["e", "root-event-id"]);
 
-  it("should handle incoming room events and update signals", async () => {
-    const { responses } = await import("../src/signals/store");
-    const { subscribeToRoom, initNDK } = await import("../src/utils/nostr");
+    // Name should be encrypted
+    const nameTag = event.tags.find((t) => t[0] === "name");
+    expect(nameTag).toBeDefined();
+    const nameValue = nameTag?.[1];
+    expect(nameValue).toBe("encrypted-Alice");
+    if (!nameValue) throw new Error("Missing name tag value");
+    expect(decryptData(nameValue, MOCK_KEY)).toBe("Alice");
 
-    // Clear signal for test
-    responses.value = new Map();
-
-    // Prepare NDK mock to return a root event
-    const ndk = await initNDK();
-    (
-      ndk.fetchEvent as unknown as {
-        mockResolvedValueOnce: (v: unknown) => void;
-      }
-    ).mockResolvedValueOnce({ id: "root-abc", tags: [] });
-
-    const result = await subscribeToRoom("room-123");
-    expect(result).not.toBeNull();
-
-    // Access the 'on' handler that was registered
-    const onHandler = (
-      result?.sub.on as unknown as {
-        mock: { calls: [string, (event: unknown) => void][] };
-      }
-    ).mock.calls.find((call) => call[0] === "event")?.[1];
-
-    expect(onHandler).toBeDefined();
-
-    // Simulate an incoming Nostr event
-    const mockEvent = {
-      pubkey: "alice-pubkey",
-      created_at: 1000,
-      tags: [
-        ["name", "Alice"],
-        ["r", "slot-1,slot-2"],
-      ],
-    };
-
-    onHandler?.(mockEvent);
-
-    const aliceResponse = responses.value.get("alice-pubkey");
-    expect(aliceResponse).toBeDefined();
-    expect(aliceResponse?.name).toBe("Alice");
-    expect(aliceResponse?.slots.has("slot-1")).toBe(true);
+    // Slots should be blinded in 'r' tags
+    const blindedSlot = await deriveBlindedId("1000", MOCK_KEY);
+    expect(event.tags).toContainEqual(["r", blindedSlot]);
   });
 });

@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/preact";
 import { afterEach, beforeEach, describe, expect, test, vi } from "bun:test";
+import { cleanup, fireEvent, render, screen } from "@testing-library/preact";
 import { RelaySettings } from "../src/components/RelaySettings";
 
 // Mock utilities
@@ -29,29 +29,14 @@ describe("RelaySettings", () => {
     cleanup();
   });
 
-  test("renders configure button initially", () => {
+  test("renders settings content", () => {
     render(<RelaySettings />);
-    expect(screen.getByText("Configure Relays")).toBeTruthy();
-    expect(screen.queryByText("Nostr Relays")).toBeNull();
-  });
-
-  test("opens settings on click", async () => {
-    render(<RelaySettings />);
-    await fireEvent.click(screen.getByText("Configure Relays"));
     expect(screen.getByText("Nostr Relays")).toBeTruthy();
     expect(screen.getByText("wss://test.relay/")).toBeTruthy();
   });
 
-  test("closes settings on close button click", async () => {
-    render(<RelaySettings />);
-    await fireEvent.click(screen.getByText("Configure Relays"));
-    await fireEvent.click(screen.getByLabelText("Close"));
-    expect(screen.queryByText("Nostr Relays")).toBeNull();
-  });
-
   test("adds a new relay", async () => {
     render(<RelaySettings />);
-    await fireEvent.click(screen.getByText("Configure Relays"));
 
     const input = screen.getByPlaceholderText("wss://...");
     await fireEvent.input(input, { target: { value: "wss://new.relay/" } });
@@ -66,7 +51,6 @@ describe("RelaySettings", () => {
 
   test("removes a relay", async () => {
     render(<RelaySettings />);
-    await fireEvent.click(screen.getByText("Configure Relays"));
 
     const removeBtn = screen.getAllByText("×")[0];
     await fireEvent.click(removeBtn);
@@ -77,22 +61,10 @@ describe("RelaySettings", () => {
 
   test("resets relays to default", async () => {
     render(<RelaySettings />);
-    await fireEvent.click(screen.getByText("Configure Relays"));
     await fireEvent.click(screen.getByText("Reset Relays to Default"));
 
     expect(confirmMock).toHaveBeenCalled();
     expect(localStorage.getItem("when2nostr_relays")).toBeNull();
-    expect(reloadMock).toHaveBeenCalled();
-  });
-
-  test("resets all data", async () => {
-    render(<RelaySettings />);
-    await fireEvent.click(screen.getByText("Configure Relays"));
-    await fireEvent.click(screen.getByText("Reset All Data"));
-
-    expect(confirmMock).toHaveBeenCalled();
-    // localStorage.clear() should be called, but we can't easily spy on localStorage methods directly without more setup.
-    // However determining if confirming works and reload is called is good proxy.
     expect(reloadMock).toHaveBeenCalled();
   });
 });

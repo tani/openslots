@@ -1,6 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
 import type { NDKEvent, NDKSubscription } from "@nostr-dev-kit/ndk";
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals";
+import { AppHeader } from "../components/AppHeader";
 import { Grid } from "../components/Grid";
 import { Sidebar } from "../components/Sidebar";
 import {
@@ -10,13 +11,13 @@ import {
   responses,
   setSelections,
 } from "../signals/store";
+import {
+  decryptData,
+  deriveBlindedId,
+  getOrCreateRoomKey,
+} from "../utils/crypto";
 import { getMyPubkey, publishResponse, subscribeToRoom } from "../utils/nostr";
 import { toLocalDate, toLocalDisplay } from "../utils/temporal";
-
-function tagValue(tags: string[][], key: string): string | null {
-  const hit = tags.find((tag) => tag[0] === key);
-  return hit?.[1] ?? null;
-}
 
 function buildGrid(options: string[], tz: string) {
   const dates = new Map<string, Temporal.PlainDate>();
@@ -45,13 +46,18 @@ function buildGrid(options: string[], tz: string) {
 
 export function JoinRoom(props: { id?: string }) {
   const currentRoomId = useSignal(props.id ?? "");
-  // Sync prop to signal
   currentRoomId.value = props.id ?? "";
 
   const roomResource = useSignal<{
     root: NDKEvent;
     sub: NDKSubscription;
   } | null>(null);
+
+  // New signals for decrypted/derived data
+  const decryptedTitle = useSignal("");
+  const decryptedOptions = useSignal<string[]>([]);
+  const blindedSlotMap = useSignal(new Map<string, string>());
+
   const status = useSignal<"loading" | "ready" | "missing">("loading");
   const name = useSignal(
     localStorage.getItem("when2nostr_user_name") ?? "Anonymous",
@@ -68,27 +74,55 @@ export function JoinRoom(props: { id?: string }) {
     });
   });
 
-  // Intensive Signal Sync: React to roomId changes
   useSignalEffect(() => {
-    const rId = currentRoomId.value;
+    const rawId = currentRoomId.value;
     let activeSub: { stop: () => void } | null = null;
 
     // Reset global store for the new room
     clearResponses();
     setSelections(new Set());
     roomResource.value = null;
+    decryptedTitle.value = "";
+    decryptedOptions.value = [];
+    blindedSlotMap.value = new Map();
 
-    if (!rId) {
+    if (!rawId) {
       status.value = "missing";
       return;
     }
 
     status.value = "loading";
-    subscribeToRoom(rId).then((result) => {
-      // Guard against stale requests
-      if (currentRoomId.value !== rId) return;
+    const roomKey = getOrCreateRoomKey();
+
+    deriveBlindedId(rawId, roomKey).then(async (blindedRoomId) => {
+      // Guard against race conditions if roomId changed quickly
+      if (currentRoomId.value !== rawId) return;
+
+      const result = await subscribeToRoom(blindedRoomId, roomKey);
 
       if (!result) {
+        status.value = "missing";
+        return;
+      }
+
+      // Decrypt Content
+      try {
+        const content = decryptData(result.root.content, roomKey);
+        const data = JSON.parse(content);
+        decryptedTitle.value = data.title || "Untitled";
+        decryptedOptions.value = data.options || [];
+
+        // Compute Blinded IDs for all options (for heatmap matching)
+        const map = new Map<string, string>();
+        await Promise.all(
+          data.options.map(async (opt: string) => {
+            const b = await deriveBlindedId(opt, roomKey);
+            map.set(opt, b);
+          }),
+        );
+        blindedSlotMap.value = map;
+      } catch (e) {
+        console.error("Failed to decrypt room:", e);
         status.value = "missing";
         return;
       }
@@ -101,27 +135,23 @@ export function JoinRoom(props: { id?: string }) {
     return () => activeSub?.stop();
   });
 
-  // Derived signals
   const rootId = useComputed(() => roomResource.value?.root.id ?? null);
   const title = useComputed(() => {
     if (status.value === "loading") return "Syncing...";
     if (status.value === "missing") return "Room not found";
-    return (
-      tagValue(roomResource.value?.root.tags ?? [], "title") ??
-      "Untitled Meeting"
-    );
+    return decryptedTitle.value;
   });
 
-  const optionsList = useComputed(() => {
-    const raw = tagValue(roomResource.value?.root.tags ?? [], "options") ?? "";
-    return raw.split(",").filter(Boolean);
-  });
+  // Use stored decrypted options
+  const grid = useComputed(() => buildGrid(decryptedOptions.value, tz));
 
-  const grid = useComputed(() => buildGrid(optionsList.value, tz));
   const selectedCount = useComputed(() => currentSelections.value.size);
   const participantList = useComputed(() =>
     Array.from(responses.value.entries()).map(([pubkey, entry]) => (
-      <div class="d-flex align-items-center justify-content-between" key={pubkey}>
+      <div
+        class="d-flex align-items-center justify-content-between"
+        key={pubkey}
+      >
         <span>{entry.name}</span>
         <span class="text-muted">{entry.slots.size}</span>
       </div>
@@ -130,73 +160,91 @@ export function JoinRoom(props: { id?: string }) {
 
   const handlePublish = async () => {
     if (!rootId.value) return;
+    const roomKey = getOrCreateRoomKey();
     await publishResponse({
       rootId: rootId.value,
       name: name.value,
       slots: Array.from(currentSelections.value),
+      roomKey,
     });
   };
 
   if (status.value === "missing") {
     return (
-      <main class="container py-5 text-center">
-        <h1 class="display-4 fw-bold text-dark mb-3">Room not found</h1>
-        <p class="lead text-muted">Double-check the link or create a new room.</p>
-      </main>
+      <div>
+        <AppHeader />
+        <main class="container py-5 text-center">
+          <h1 class="display-4 fw-bold text-dark mb-3">Room not found</h1>
+          <p class="lead text-muted">
+            Double-check the link or create a new room.
+          </p>
+        </main>
+      </div>
     );
   }
 
   return (
-    <main class="container py-4">
-      <header class="mb-4 pb-3 border-bottom">
-        <h1 class="display-5 fw-bold text-dark mb-2">{title}</h1>
-        <p class="text-muted mb-0">Timezone: {tz}</p>
-      </header>
+    <div>
+      <AppHeader />
+      <main class="container py-4">
+        <header class="mb-4 pb-3 border-bottom">
+          <h1 class="display-5 fw-bold text-dark mb-2">{title}</h1>
+          <p class="text-muted mb-0">Timezone: {tz}</p>
+        </header>
 
-      {status.value === "loading" ? (
-        <p class="text-muted fst-italic">Synchronizing with Nostr relays...</p>
-      ) : (
-        <div class="row g-4">
-          <div class="col-lg-9">
-            <Grid
-              dates={grid.value.dateList}
-              times={grid.value.timeList}
-              slotByLocalKey={grid.value.slotByLocalKey}
-            />
-          </div>
-          <div class="col-lg-3">
-            <Sidebar title="Your response">
-              <div class="mb-3">
-                <label class="form-label" htmlFor="input-name">Name</label>
-                <input
-                  id="input-name"
-                  class="form-control"
-                  value={name}
-                  onInput={(e) => {
-                    name.value = e.currentTarget.value;
-                  }}
-                />
-              </div>
-              <div class="small text-muted mb-3">
-                Selected {selectedCount} slots
-              </div>
-              <button
-                type="button"
-                class="btn btn-success w-100 fw-bold mb-4"
-                onClick={handlePublish}
-              >
-                Publish availability
-              </button>
-              <div class="d-grid gap-2">
-                <div class="small text-uppercase fw-bold text-muted" style="letter-spacing: 0.1em;">
-                  Participants
+        {status.value === "loading" ? (
+          <p class="text-muted fst-italic">
+            Synchronizing with Nostr relays...
+          </p>
+        ) : (
+          <div class="row g-4">
+            <div class="col-lg-9">
+              <Grid
+                dates={grid.value.dateList}
+                times={grid.value.timeList}
+                slotByLocalKey={grid.value.slotByLocalKey}
+                blindedSlotMap={blindedSlotMap.value}
+              />
+            </div>
+            <div class="col-lg-3">
+              <Sidebar title="Your response">
+                <div class="mb-3">
+                  <label class="form-label" htmlFor="input-name">
+                    Name
+                  </label>
+                  <input
+                    id="input-name"
+                    class="form-control"
+                    value={name}
+                    onInput={(e) => {
+                      name.value = e.currentTarget.value;
+                    }}
+                  />
                 </div>
-                <div class="small">{participantList}</div>
-              </div>
-            </Sidebar>
+                <div class="small text-muted mb-3">
+                  Selected {selectedCount} slots
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-success w-100 fw-bold mb-4"
+                  onClick={handlePublish}
+                >
+                  Publish availability
+                </button>
+                <div class="d-grid gap-2">
+                  <div
+                    class="small text-uppercase fw-bold text-muted"
+                    style="letter-spacing: 0.1em;"
+                  >
+                    Participants
+                  </div>
+                  <div class="small">{participantList}</div>
+                </div>
+              </Sidebar>
+            </div>
           </div>
-        </div>
-      )}
-    </main>
+        )}
+      </main>
+    </div>
   );
 }

@@ -5,6 +5,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
     "moduleResolution": "Bundler",
-    "strict": true
+    "strict": true,
+    "skipLibCheck": true
   }
 }

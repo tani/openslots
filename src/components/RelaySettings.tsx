@@ -4,7 +4,6 @@ import { getRelays, setRelays } from "../utils/nostr";
 export function RelaySettings() {
   const relays = useSignal(getRelays());
   const newRelay = useSignal("");
-  const isOpen = useSignal(false);
 
   const handleAdd = () => {
     if (!newRelay.value) return;
@@ -22,33 +21,12 @@ export function RelaySettings() {
     setRelays(next);
   };
 
-  if (!isOpen.value) {
-    return (
-      <button
-        type="button"
-        class="btn btn-link text-muted btn-sm"
-        onClick={() => {
-          isOpen.value = true;
-        }}
-      >
-        Configure Relays
-      </button>
-    );
-  }
-
   return (
-    <div class="card p-3 mt-4">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="mb-0 fw-bold">Nostr Relays</h6>
-        <button
-          type="button"
-          class="btn-close"
-          aria-label="Close"
-          onClick={() => {
-            isOpen.value = false;
-          }}
-        />
-      </div>
+    <div>
+      <h6 class="mb-2 fw-bold">Nostr Relays</h6>
+      <p class="small text-muted mb-3">
+        Choose where room data is published and synced.
+      </p>
       <ul class="list-group mb-3">
         {relays.value.map((url) => (
           <li
@@ -66,10 +44,10 @@ export function RelaySettings() {
           </li>
         ))}
       </ul>
-      <div class="input-group input-group-sm">
+      <div class="d-flex gap-2 mb-3">
         <input
           type="text"
-          class="form-control"
+          class="form-control form-control-sm"
           placeholder="wss://..."
           value={newRelay}
           onInput={(e) => {
@@ -83,15 +61,13 @@ export function RelaySettings() {
           }}
         />
         <button
-          class="btn btn-outline-secondary"
           type="button"
+          class="btn btn-primary btn-sm"
           onClick={handleAdd}
         >
           Add
         </button>
       </div>
-
-      <hr class="my-3" />
 
       <div class="d-grid gap-2">
         <button
@@ -107,22 +83,9 @@ export function RelaySettings() {
           Reset Relays to Default
         </button>
 
-        <button
-          type="button"
-          class="btn btn-outline-danger btn-sm"
-          onClick={() => {
-            if (
-              confirm(
-                "Reset EVERYTHING? This will clear your name, private key, and custom relays.",
-              )
-            ) {
-              localStorage.clear();
-              location.reload();
-            }
-          }}
-        >
-          Reset All Data
-        </button>
+        <div class="small text-muted">
+          Relay changes only affect this browser.
+        </div>
       </div>
     </div>
   );

@@ -4,25 +4,37 @@ import { cleanup, render, screen } from "@testing-library/preact";
 import { JoinRoom } from "../src/pages/JoinRoom";
 import * as nostrUtils from "../src/utils/nostr";
 
+// Mock crypto
+mock.module("../src/utils/crypto", () => ({
+  getOrCreateRoomKey: () => "mock-key",
+  deriveBlindedId: async (id: string) => `blinded-${id}`,
+  decryptData: (text: string) => text,
+  encryptData: (text: string) => text,
+}));
+
 afterEach(() => {
   cleanup();
 });
 
 // Spy on Nostr utils
+type SubscribeReturn = Awaited<ReturnType<typeof nostrUtils.subscribeToRoom>>;
+
 spyOn(nostrUtils, "subscribeToRoom").mockResolvedValue({
   root: {
     id: "root-1",
-    tags: [
-      ["title", "Test Room"],
-      ["options", "123456"],
-    ],
-  } as unknown as Parameters<typeof nostrUtils.publishResponse>[0], // Using a compatible shape
+    content: JSON.stringify({
+      title: "Test Room",
+      options: ["1736773200"], // Example epoch
+    }),
+    tags: [],
+  },
   sub: { stop: mock(() => {}) },
-} as unknown as Awaited<ReturnType<typeof nostrUtils.subscribeToRoom>>);
+} as unknown as SubscribeReturn);
 
 spyOn(nostrUtils, "publishResponse").mockResolvedValue(
   {} as unknown as Awaited<ReturnType<typeof nostrUtils.publishResponse>>,
 );
+spyOn(nostrUtils, "getMyPubkey").mockResolvedValue("my-pubkey");
 
 test("JoinRoom shows loading state then content", async () => {
   render(<JoinRoom id="room-123" />);

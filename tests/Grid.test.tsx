@@ -1,7 +1,11 @@
 /// <reference lib="dom" />
-import { expect, test } from "bun:test";
-import { render, screen } from "@testing-library/preact";
+import { afterEach, expect, test } from "bun:test";
+import { cleanup, render, screen } from "@testing-library/preact";
 import { Grid } from "../src/components/Grid";
+
+afterEach(() => {
+  cleanup();
+});
 
 test("Grid renders dates and times", () => {
   const dates = ["2026-01-13", "2026-01-14"];
@@ -11,7 +15,15 @@ test("Grid renders dates and times", () => {
     ["2026-01-14|10:00", "slot-2"],
   ]);
 
-  render(<Grid dates={dates} times={times} slotByLocalKey={slotByLocalKey} />);
+  const blindedSlotMap = new Map();
+  render(
+    <Grid
+      dates={dates}
+      times={times}
+      slotByLocalKey={slotByLocalKey}
+      blindedSlotMap={blindedSlotMap}
+    />,
+  );
 
   expect(screen.getByText("2026-01-13")).toBeTruthy();
   expect(screen.getByText("2026-01-14")).toBeTruthy();
