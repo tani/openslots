@@ -23,7 +23,7 @@ export function generateSlots(
   const slots: string[] = [];
   while (Temporal.ZonedDateTime.compare(cursor, endZdt) < 0) {
     slots.push(String(cursor.epochSeconds));
-    cursor = cursor.add({ minutes: 15 });
+    cursor = cursor.add({ minutes: 30 });
   }
 
   return slots;

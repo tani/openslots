@@ -7,28 +7,23 @@ import {
 } from "../src/utils/temporal";
 
 describe("temporal utils", () => {
-  it("generates 15-minute slots in UTC", () => {
+  it("generates 30-minute slots in UTC", () => {
     const slots = generateSlots("2024-01-01", "09:00", "10:00", "UTC");
-    expect(slots.length).toBe(4);
+    expect(slots.length).toBe(2);
     const times = slots.map((epoch) =>
       Temporal.Instant.fromEpochSeconds(Number(epoch))
         .toZonedDateTimeISO("UTC")
         .toPlainTime()
         .toString(),
     );
-    expect(times).toEqual(["09:00:00", "09:15:00", "09:30:00", "09:45:00"]);
+    expect(times).toEqual(["09:00:00", "09:30:00"]);
   });
 
   it("handles overnight ranges", () => {
     const slots = generateSlots("2024-01-01", "23:30", "00:30", "UTC");
-    expect(slots.length).toBe(4);
+    expect(slots.length).toBe(2);
     const dates = slots.map((epoch) => toLocalDate(epoch, "UTC").toString());
-    expect(dates).toEqual([
-      "2024-01-01",
-      "2024-01-01",
-      "2024-01-02",
-      "2024-01-02",
-    ]);
+    expect(dates).toEqual(["2024-01-01", "2024-01-02"]);
   });
 
   it("converts to local display time", () => {

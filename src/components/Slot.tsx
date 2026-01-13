@@ -3,6 +3,7 @@ import { type ReadonlySignal, type Signal, useComputed } from "@preact/signals";
 export function Slot(props: {
   slotId: string;
   blindedId: string;
+  rowShade?: boolean;
   heatmap: ReadonlySignal<Map<string, number>>;
   participantCount: ReadonlySignal<number>;
   currentSelections: Signal<Set<string>>;
@@ -19,9 +20,17 @@ export function Slot(props: {
 
   const background = useComputed(() => {
     const opacity = total.value > 0 ? count.value / total.value : 0;
-    return selected.value
-      ? "rgba(34, 197, 94, 0.8)"
-      : `rgba(34, 197, 94, ${opacity})`;
+    if (selected.value) {
+      return "rgba(34, 197, 94, 0.8)";
+    }
+    const baseOpacity =
+      count.value === 0
+        ? props.rowShade
+          ? 0.06
+          : 0.03
+        : Math.max(0.12, opacity);
+    const baseColor = count.value === 0 ? "15, 23, 42" : "34, 197, 94";
+    return `rgba(${baseColor}, ${baseOpacity})`;
   });
 
   return (

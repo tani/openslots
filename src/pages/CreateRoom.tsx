@@ -24,7 +24,7 @@ export function CreateRoom() {
       const diffMinutes =
         end.hour * 60 + end.minute - (start.hour * 60 + start.minute);
       if (diffMinutes <= 0) return 0;
-      return Math.floor(diffMinutes / 15) * days.value;
+      return Math.floor(diffMinutes / 30) * days.value;
     } catch {
       return 0;
     }

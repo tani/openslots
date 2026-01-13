@@ -41,61 +41,81 @@ export function Grid(props: {
   return (
     <div class="overflow-auto border rounded-3 bg-white shadow-sm">
       <div
+        class="px-3 py-2 border-bottom bg-white"
+        style="position: sticky; left: 0; right: 0; z-index: 4;"
+      >
+        <div class="small fw-semibold text-dark">
+          Drag to paint your availability.
+        </div>
+        <div class="small text-muted">
+          Darker green means more participants can make that slot.
+        </div>
+      </div>
+      <div
         class="d-grid"
         style={{
           gridTemplateColumns: `120px repeat(${props.dates.length}, minmax(140px, 1fr))`,
         }}
       >
         <div
-          class="sticky-top bg-white bg-opacity-75 z-10 px-3 py-2 small fw-bold border-bottom"
-          style="backdrop-filter: blur(4px);"
+          class="sticky-top bg-white bg-opacity-75 px-3 py-2 small fw-bold border-bottom border-end"
+          style="backdrop-filter: blur(4px); z-index: 3; left: 0;"
         >
           Time
         </div>
         {props.dates.map((date) => (
           <div
-            class="sticky-top bg-white bg-opacity-75 z-10 px-3 py-2 small fw-bold border-bottom"
-            style="backdrop-filter: blur(4px);"
+            class="sticky-top bg-white bg-opacity-75 px-3 py-2 small fw-bold border-bottom"
+            style="backdrop-filter: blur(4px); z-index: 2;"
             key={date}
           >
             {date}
           </div>
         ))}
 
-        {props.times.map((time) => (
-          <div class="contents" key={time}>
-            <div class="px-3 py-1 small text-muted border-bottom border-light">
+        {props.times.map((time, timeIndex) => {
+          const rowShade = timeIndex % 2 === 0;
+          const rowShadeClass = rowShade ? " bg-light" : "";
+
+          return (
+            <div style={{ display: "contents" }} key={time}>
+              <div
+                class={`px-3 py-1 small text-muted border-bottom border-light border-end${rowShadeClass}`}
+                style="position: sticky; left: 0; z-index: 1;"
+              >
               {time}
-            </div>
-            {props.dates.map((date) => {
-              const slotId = props.slotByLocalKey.get(`${date}|${time}`);
-              if (!slotId) {
+              </div>
+              {props.dates.map((date) => {
+                const slotId = props.slotByLocalKey.get(`${date}|${time}`);
+                if (!slotId) {
+                  return (
+                    <div
+                      key={`${date}-${time}`}
+                      class={`border-bottom border-light${rowShadeClass}`}
+                      style={{ height: "1.5rem" }}
+                    />
+                  );
+                }
+
+                const blindedId = props.blindedSlotMap.get(slotId) ?? slotId;
+
                 return (
-                  <div
-                    key={`${date}-${time}`}
-                    class="border-bottom border-light bg-secondary bg-opacity-10"
-                    style={{ height: "1.5rem" }}
+                  <Slot
+                    key={slotId}
+                    slotId={slotId}
+                    blindedId={blindedId}
+                    rowShade={rowShade}
+                    heatmap={heatmap}
+                    participantCount={participantCount}
+                    currentSelections={currentSelections}
+                    onMouseDown={handleMouseDown}
+                    onMouseEnter={handleMouseEnter}
                   />
                 );
-              }
-
-              const blindedId = props.blindedSlotMap.get(slotId) ?? slotId;
-
-              return (
-                <Slot
-                  key={slotId}
-                  slotId={slotId}
-                  blindedId={blindedId}
-                  heatmap={heatmap}
-                  participantCount={participantCount}
-                  currentSelections={currentSelections}
-                  onMouseDown={handleMouseDown}
-                  onMouseEnter={handleMouseEnter}
-                />
-              );
-            })}
-          </div>
-        ))}
+              })}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
