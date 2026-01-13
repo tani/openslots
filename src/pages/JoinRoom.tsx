@@ -6,10 +6,11 @@ import { Sidebar } from "../components/Sidebar";
 import {
   clearResponses,
   currentSelections,
+  currentUserPubkey,
   responses,
   setSelections,
 } from "../signals/store";
-import { publishResponse, subscribeToRoom } from "../utils/nostr";
+import { getMyPubkey, publishResponse, subscribeToRoom } from "../utils/nostr";
 import { toLocalDate, toLocalDisplay } from "../utils/temporal";
 
 function tagValue(tags: string[][], key: string): string | null {
@@ -59,6 +60,12 @@ export function JoinRoom(props: { id?: string }) {
 
   useSignalEffect(() => {
     localStorage.setItem("when2nostr_user_name", name.value);
+  });
+
+  useSignalEffect(() => {
+    getMyPubkey().then((pk) => {
+      currentUserPubkey.value = pk;
+    });
   });
 
   // Intensive Signal Sync: React to roomId changes

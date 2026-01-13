@@ -1,7 +1,31 @@
 import NDK, { NDKEvent, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
 import { upsertResponse } from "../signals/store";
 
-const RELAYS = ["wss://nos.lol", "wss://relay.damus.io", "wss://nostr.wine"];
+const DEFAULT_RELAYS = [
+  "wss://nos.lol",
+  "wss://relay.damus.io",
+  "wss://nostr.wine",
+];
+
+export function getRelays(): string[] {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return DEFAULT_RELAYS;
+  }
+  const saved = window.localStorage.getItem("when2nostr_relays");
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      // ignore error
+    }
+  }
+  return DEFAULT_RELAYS;
+}
+
+export function setRelays(relays: string[]) {
+  window.localStorage.setItem("when2nostr_relays", JSON.stringify(relays));
+  _resetNDK();
+}
 
 let ndkInstance: NDK | null = null;
 
@@ -25,10 +49,16 @@ async function getSigner() {
   return signer;
 }
 
+export async function getMyPubkey(): Promise<string> {
+  const signer = await getSigner();
+  const user = await signer.user();
+  return user.pubkey;
+}
+
 export async function initNDK() {
   if (ndkInstance) return ndkInstance;
 
-  const ndk = new NDK({ explicitRelayUrls: RELAYS });
+  const ndk = new NDK({ explicitRelayUrls: getRelays() });
   ndk.signer = await getSigner();
   await ndk.connect();
   ndkInstance = ndk;
@@ -87,14 +117,14 @@ export async function subscribeToRoom(roomId: string) {
 
   const sub = ndk.subscribe(
     { kinds: [10001], "#e": [root.id] },
-    { closeOnEose: false },
+    { closeOnEose: false }
   );
 
   sub.on("event", (event: NDKEvent) => {
     const selections = tagValue(event.tags, "r");
     const name = tagValue(event.tags, "name") ?? "Anonymous";
     const slots = new Set(
-      selections ? selections.split(",").filter(Boolean) : [],
+      selections ? selections.split(",").filter(Boolean) : []
     );
     upsertResponse(event.pubkey, {
       slots,

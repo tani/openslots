@@ -7,13 +7,16 @@ export type ResponseEntry = {
 };
 
 export const responses = signal<Map<string, ResponseEntry>>(new Map());
+export const currentUserPubkey = signal<string | null>(null);
 export const currentSelections = signal<Set<string>>(new Set());
 
 export const participantCount = computed(() => responses.value.size);
 
 export const heatmap = computed(() => {
   const counts = new Map<string, number>();
-  for (const { slots } of responses.value.values()) {
+  const myPubkey = currentUserPubkey.value;
+  for (const [pubkey, { slots }] of responses.value.entries()) {
+    if (pubkey === myPubkey) continue;
     for (const slot of slots) {
       counts.set(slot, (counts.get(slot) ?? 0) + 1);
     }

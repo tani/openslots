@@ -1,8 +1,12 @@
 /// <reference lib="dom" />
-import { expect, mock, spyOn, test } from "bun:test";
-import { render, screen } from "@testing-library/preact";
+import { afterEach, expect, mock, spyOn, test } from "bun:test";
+import { cleanup, render, screen } from "@testing-library/preact";
 import { JoinRoom } from "../src/pages/JoinRoom";
 import * as nostrUtils from "../src/utils/nostr";
+
+afterEach(() => {
+  cleanup();
+});
 
 // Spy on Nostr utils
 spyOn(nostrUtils, "subscribeToRoom").mockResolvedValue({

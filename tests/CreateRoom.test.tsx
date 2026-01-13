@@ -1,9 +1,13 @@
 /// <reference lib="dom" />
-import { expect, mock, spyOn, test } from "bun:test";
-import { fireEvent, render, screen } from "@testing-library/preact";
+import { afterEach, expect, mock, spyOn, test } from "bun:test";
+import { cleanup, fireEvent, render, screen } from "@testing-library/preact";
 import * as preactIso from "preact-iso";
 import { CreateRoom } from "../src/pages/CreateRoom";
 import * as nostrUtils from "../src/utils/nostr";
+
+afterEach(() => {
+  cleanup();
+});
 
 // Mock Nostr
 spyOn(nostrUtils, "publishRoom").mockResolvedValue(

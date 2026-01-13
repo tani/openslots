@@ -1,6 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useComputed, useSignal } from "@preact/signals";
 import { useLocation } from "preact-iso";
+import { RelaySettings } from "../components/RelaySettings";
 import { publishRoom } from "../utils/nostr";
 import { generateSlots } from "../utils/temporal";
 
@@ -171,6 +172,7 @@ export function CreateRoom() {
               {loading.value ? "Publishing..." : "Create room"}
             </button>
           </form>
+          <RelaySettings />
         </div>
       </div>
     </main>
