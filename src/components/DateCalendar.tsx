@@ -78,6 +78,15 @@ export function DateCalendar(props: {
                 class={`btn btn-sm ${
                   isSelected ? "btn-primary" : "btn-outline-secondary"
                 }`}
+                style={{
+                  aspectRatio: "1.618 / 1",
+                  padding: "0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "clamp(0.7rem, 2.2vw, 0.95rem)",
+                  lineHeight: "1",
+                }}
                 aria-label={`Toggle date ${date}`}
                 aria-pressed={isSelected}
                 onClick={() => {
