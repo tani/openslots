@@ -105,7 +105,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     expect(getRelays()).toEqual([
       "wss://nos.lol",
       "wss://relay.damus.io",
-      "wss://nostr.wine",
+      "wss://relay.nostr.band",
     ]);
   });
 
@@ -134,7 +134,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
       expect(getRelays()).toEqual([
         "wss://nos.lol",
         "wss://relay.damus.io",
-        "wss://nostr.wine",
+        "wss://relay.nostr.band",
       ]);
       const pubkey = await getMyPubkey();
       expect(pubkey).toBe("mock-pubkey");

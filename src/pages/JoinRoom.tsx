@@ -67,6 +67,7 @@ export function JoinRoom(props: { id?: string }) {
   const name = useSignal(
     localStorage.getItem("openslots_user_name") ?? "Anonymous",
   );
+  const shareStatus = useSignal("");
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   useSignalEffect(() => {
@@ -123,6 +124,14 @@ export function JoinRoom(props: { id?: string }) {
     return () => activeSub?.stop();
   });
 
+  useSignalEffect(() => {
+    if (!shareStatus.value) return;
+    const timeoutId = setTimeout(() => {
+      shareStatus.value = "";
+    }, 2500);
+    return () => clearTimeout(timeoutId);
+  });
+
   const rootId = useComputed(() => roomResource.value?.root.id ?? null);
   const title = useComputed(() => {
     if (status.value === "loading") return "Syncing...";
@@ -159,6 +168,28 @@ export function JoinRoom(props: { id?: string }) {
     });
   };
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    const shareTitle = roomTitle.value || "OpenSlots room";
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: shareTitle, url });
+        shareStatus.value = "Shared";
+        return;
+      }
+    } catch {
+      // Fall back to clipboard if Web Share fails or is canceled.
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      shareStatus.value = "Link copied";
+    } catch {
+      shareStatus.value = "Unable to share";
+    }
+  };
+
   if (status.value === "missing") {
     return (
       <div>
@@ -178,8 +209,24 @@ export function JoinRoom(props: { id?: string }) {
       <AppHeader />
       <main class="container py-4">
         <header class="mb-4 pb-3 border-bottom">
-          <h1 class="display-5 fw-bold text-dark mb-2">{title}</h1>
-          <p class="text-muted mb-0">Timezone: {tz}</p>
+          <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+              <h1 class="display-5 fw-bold text-dark mb-2">{title}</h1>
+              <p class="text-muted mb-0">Timezone: {tz}</p>
+            </div>
+            <div class="d-flex flex-column align-items-md-end gap-2">
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                onClick={handleShare}
+              >
+                Share room
+              </button>
+              {shareStatus.value ? (
+                <div class="small text-muted">{shareStatus}</div>
+              ) : null}
+            </div>
+          </div>
         </header>
 
         {status.value === "loading" ? (

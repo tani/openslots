@@ -21,7 +21,8 @@ import { buildSelectionMask, buildSlotMask, decodeSlotMask } from "./slots";
 const DEFAULT_RELAYS = [
   "wss://nos.lol",
   "wss://relay.damus.io",
-  "wss://nostr.wine",
+  "wss://relay.nostr.band",
+  // "wss://nostr.wine",
 ];
 
 export function getRelays(): string[] {
