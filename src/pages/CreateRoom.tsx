@@ -5,6 +5,8 @@ import { Temporal } from "@js-temporal/polyfill";
 import { useComputed, useSignal } from "@preact/signals";
 import { useLocation } from "preact-iso";
 import { AppHeader } from "../components/AppHeader";
+import { DateCalendar } from "../components/DateCalendar";
+import { SelectedDatesList } from "../components/SelectedDatesList";
 import { publishRoom } from "../utils/nostr";
 import { generateSlots } from "../utils/temporal";
 
@@ -167,121 +169,29 @@ export function CreateRoom() {
               </div>
 
               <div class="row g-3 mb-3">
-                <div class="col-md-7">
-                  <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="form-label mb-0">Dates</span>
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm"
-                      disabled={selectedDateCount.value === 0}
-                      onClick={clearDates}
-                    >
-                      Clear dates
-                    </button>
-                  </div>
-                  <div class="d-flex align-items-center justify-content-between mb-2">
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm"
-                      aria-label="Previous month"
-                      onClick={() => {
-                        visibleMonth.value = visibleMonth.value.subtract({
-                          months: 1,
-                        });
-                      }}
-                    >
-                      Prev
-                    </button>
-                    <span class="small fw-semibold">{monthLabel}</span>
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary btn-sm"
-                      aria-label="Next month"
-                      onClick={() => {
-                        visibleMonth.value = visibleMonth.value.add({
-                          months: 1,
-                        });
-                      }}
-                    >
-                      Next
-                    </button>
-                  </div>
-                  <div class="d-grid gap-2">
-                    <div
-                      class="d-grid text-center small text-muted"
-                      style="grid-template-columns: repeat(7, minmax(0, 1fr));"
-                    >
-                      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
-                        (day) => (
-                          <div key={day}>{day}</div>
-                        ),
-                      )}
-                    </div>
-                    <div
-                      class="d-grid gap-2"
-                      style="grid-template-columns: repeat(7, minmax(0, 1fr));"
-                    >
-                      {Array.from({
-                        length: calendarDays.value.leadingEmpty,
-                      }).map((_, index) => (
-                        <div key={`empty-${index}`} />
-                      ))}
-                      {calendarDays.value.days.map((date) => {
-                        const isSelected = selectedDateSet.value.has(date);
-                        return (
-                          <button
-                            key={date}
-                            type="button"
-                            class={`btn btn-sm ${
-                              isSelected
-                                ? "btn-primary"
-                                : "btn-outline-secondary"
-                            }`}
-                            aria-label={`Toggle date ${date}`}
-                            aria-pressed={isSelected}
-                            onClick={() => {
-                              toggleDate(date);
-                            }}
-                          >
-                            {Temporal.PlainDate.from(date).day}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {selectedDateCount.value === 0 ? (
-                      <span class="small text-muted">No dates selected.</span>
-                    ) : null}
-                  </div>
-                </div>
-                <div class="col-md-5">
-                  <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="form-label mb-0">Selected dates</span>
-                    <span class="small text-muted">
-                      {selectedDateCount} selected
-                    </span>
-                  </div>
-                  <div class="d-flex flex-wrap gap-2">
-                    {normalizedDates.value.length === 0 ? (
-                      <span class="small text-muted">
-                        Pick dates to continue.
-                      </span>
-                    ) : (
-                      normalizedDates.value.map((date) => (
-                        <button
-                          key={date}
-                          type="button"
-                          class="btn btn-outline-secondary btn-sm"
-                          aria-label={`Remove ${date}`}
-                          onClick={() => {
-                            toggleDate(date);
-                          }}
-                        >
-                          {date}
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </div>
+                <DateCalendar
+                  monthLabel={monthLabel}
+                  calendarDays={calendarDays}
+                  selectedDateSet={selectedDateSet}
+                  selectedDateCount={selectedDateCount}
+                  onPrevMonth={() => {
+                    visibleMonth.value = visibleMonth.value.subtract({
+                      months: 1,
+                    });
+                  }}
+                  onNextMonth={() => {
+                    visibleMonth.value = visibleMonth.value.add({
+                      months: 1,
+                    });
+                  }}
+                  onToggleDate={toggleDate}
+                  onClearDates={clearDates}
+                />
+                <SelectedDatesList
+                  normalizedDates={normalizedDates}
+                  selectedDateCount={selectedDateCount}
+                  onToggleDate={toggleDate}
+                />
               </div>
 
               <div class="row g-3 mb-3">
