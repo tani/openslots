@@ -57,8 +57,8 @@ test("CreateRoom updates inputs and handles invalid time", () => {
   const startDate = screen.getByLabelText(/Start date/i);
   fireEvent.input(startDate, { target: { value: "2024-02-01" } });
 
-  const days = screen.getByLabelText(/Days/i);
-  fireEvent.input(days, { target: { value: "2" } });
+  const endDate = screen.getByLabelText(/End date/i);
+  fireEvent.input(endDate, { target: { value: "2024-02-02" } });
 
   const startTime = screen.getByLabelText(/Start time/i);
   fireEvent.input(startTime, { target: { value: "invalid" } });
@@ -72,5 +72,23 @@ test("CreateRoom updates inputs and handles invalid time", () => {
     fireEvent.change(tzSelect, { target: { value: optionValue } });
   }
 
-  expect(screen.getByText(/0 time slots/i)).toBeTruthy();
+  expect(screen.getByText(/0 slots/i)).toBeTruthy();
+});
+
+test("CreateRoom handles invalid end date", () => {
+  render(<CreateRoom />);
+
+  const startDate = screen.getByLabelText(/Start date/i);
+  fireEvent.input(startDate, { target: { value: "2024-02-01" } });
+
+  const endDate = screen.getByLabelText(/End date/i);
+  fireEvent.input(endDate, { target: { value: "invalid" } });
+
+  const startTime = screen.getByLabelText(/Start time/i);
+  fireEvent.input(startTime, { target: { value: "09:00" } });
+
+  const endTime = screen.getByLabelText(/End time/i);
+  fireEvent.input(endTime, { target: { value: "10:00" } });
+
+  expect(screen.getByText(/0 slots/i)).toBeTruthy();
 });

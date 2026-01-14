@@ -13,11 +13,22 @@ export function CreateRoom() {
   const today = Temporal.Now.plainDateISO();
   const title = useSignal("Meeting");
   const startDate = useSignal(today.toString());
-  const days = useSignal(7);
+  const endDate = useSignal(today.add({ days: 6 }).toString());
   const startTime = useSignal("09:00");
   const endTime = useSignal("18:00");
   const tz = useSignal(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const loading = useSignal(false);
+
+  const dayCount = useComputed(() => {
+    try {
+      const start = Temporal.PlainDate.from(startDate.value);
+      const end = Temporal.PlainDate.from(endDate.value);
+      if (Temporal.PlainDate.compare(end, start) < 0) return 0;
+      return start.until(end, { largestUnit: "days" }).days + 1;
+    } catch {
+      return 0;
+    }
+  });
 
   const totalSlots = useComputed(() => {
     try {
@@ -27,7 +38,7 @@ export function CreateRoom() {
       const diffMinutes =
         end.hour * 60 + end.minute - (start.hour * 60 + start.minute);
       if (diffMinutes <= 0) return 0;
-      return Math.floor(diffMinutes / 30) * days.value;
+      return Math.floor(diffMinutes / 30) * dayCount.value;
     } catch {
       return 0;
     }
@@ -39,8 +50,9 @@ export function CreateRoom() {
 
     try {
       const plainStart = Temporal.PlainDate.from(startDate.value);
+      const count = dayCount.value;
       const options: string[] = [];
-      for (let i = 0; i < days.value; i += 1) {
+      for (let i = 0; i < count; i += 1) {
         const day = plainStart.add({ days: i });
         options.push(
           ...generateSlots(
@@ -74,12 +86,18 @@ export function CreateRoom() {
           <div class="col-lg-8">
             <section class="mb-4 text-center">
               <h1 class="display-4 fw-bold text-dark mb-3">
-                Secure Scheduling Without Accounts
+                Secure Scheduling <br />
+                Without Accounts
               </h1>
               <p class="lead text-muted">
                 OpenSlots runs entirely in your browser. It generates a room key
                 client-side, encrypts the schedule, and publishes only blinded
-                ciphertext to relays. Share the URL fragment to invite others.
+                ciphertext to Nostr relays. This project is open source for
+                transparency, and the code is available at{" "}
+                <a href="https://github.com/tani/openslots">
+                  https://github.com/tani/openslots
+                </a>
+                .
               </p>
             </section>
 
@@ -114,18 +132,16 @@ export function CreateRoom() {
                   />
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label" htmlFor="input-days">
-                    Days
+                  <label class="form-label" htmlFor="input-end-date">
+                    End date
                   </label>
                   <input
-                    id="input-days"
-                    type="number"
-                    min={1}
-                    max={30}
+                    id="input-end-date"
+                    type="date"
                     class="form-control"
-                    value={days}
+                    value={endDate}
                     onInput={(e) => {
-                      days.value = Number(e.currentTarget.value);
+                      endDate.value = e.currentTarget.value;
                     }}
                   />
                 </div>
