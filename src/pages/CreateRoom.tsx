@@ -90,10 +90,10 @@ export function CreateRoom() {
                 Without Accounts
               </h1>
               <p class="lead text-muted">
-                OpenSlots runs entirely in your browser. It generates a room key
-                client-side, encrypts the schedule, and publishes only blinded
-                ciphertext to Nostr relays. This project is open source for
-                transparency, and the code is available at{" "}
+                OpenSlots runs entirely in your browser. It creates a room key
+                on your device, encrypts the schedule, and publishes only
+                blinded ciphertext to Nostr relays. The project is open source
+                for transparency, and the technical details are available at{" "}
                 <a href="https://github.com/tani/openslots">
                   https://github.com/tani/openslots
                 </a>
