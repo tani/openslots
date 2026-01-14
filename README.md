@@ -11,13 +11,13 @@
   <a href="https://openslots.pages.dev">https://openslots.pages.dev</a>
 </p>
 
+OpenSlots is a decentralized, zero-knowledge scheduling alternative to Doodle or Calendly built on the Nostr network. To prevent the metadata leakage common in centralized services, it features:
 
-## Abstract
-
-Centralized scheduling services provide usability at the cost of extensive metadata exposure, including social-graph inference (who meets whom), temporal patterns (when), and contextual cues (often why). This project presents **OpenSlots**, a zero-knowledge scheduling application implemented as a browser-based thick client atop the **Nostr** relay network. OpenSlots decouples application logic from storage by publishing encrypted, replaceable events to untrusted relays while distributing decryption capability exclusively via URL fragments. The design integrates (i) client-side key generation and end-to-end encryption using **NIP-44** (ChaCha20-Poly1305), (ii) *blinded indexing* via **HMAC-SHA256** to mitigate relay-side observability of room identifiers, and (iii) compact availability encoding via bitmask compression to respect relay payload constraints. This README documents the adversary model, analyzes confidentiality and metadata leakage, and discusses operational trade-offs and limitations. The resulting system provides a censorship-resistant and trust-minimized alternative to centralized platforms such as Doodle or Calendly.
-
-**Keywords:** decentralized scheduling, Nostr, end-to-end encryption, metadata privacy, blinded indexing, zero-knowledge applications
-
+* **End-to-End Encryption:** Uses NIP-44 (ChaCha20) to hide data from untrusted relays.
+* **Blinded Indexing:** Uses HMAC-SHA256 to conceal room identifiers.
+* **Zero-Knowledge Access:** Decryption keys are shared exclusively via URL fragments, never stored on servers.
+* **Efficiency:** Uses bitmask compression for compact data storage.
+* **Anonymity:** You do not need to create a Nostr account to use OpenSlots. It uses instant Nostr accounts to prevent association with a user's identity.
 
 ## 1. Introduction
 
@@ -42,7 +42,6 @@ This project makes three main contributions:
 * **Security construction:** A client-held symmetric room key distributed via URL fragments, used for both payload encryption (NIP-44) and blinded indexing (HMAC-SHA256).
 * **Efficiency technique:** A bitmask compression scheme for availability that substantially reduces payload size under typical meeting-grid resolutions.
 
-
 ## 2. Background and Design Rationale
 
 ### 2.1 Nostr as a Relay Substrate
@@ -52,7 +51,6 @@ Nostr ("Notes and Other Stuff Transmitted by Relays") specifies a simple event m
 ### 2.2 Replaceable Events for Collaborative State
 
 OpenSlots represents rooms and responses using **Kind 30078** events (parameterized replaceable events). Replaceability permits a room creator to update meeting parameters and participants to revise availability without generating unbounded event histories, which is beneficial under relay retention policies and client synchronization.
-
 
 ## 3. System Architecture
 
@@ -79,7 +77,6 @@ Only encrypted representations of (1) and (2) are published to relays.
 
 Clients publish and query events using a relay set (e.g., multiple WebSocket endpoints). The use of multiple relays provides redundancy against outages and selective censorship. Because relays are untrusted and potentially adversarial, the protocol minimizes what relays can learn from stored content and indexing tags.
 
-
 ## 4. Threat Model and Security Goals
 
 ### 4.1 Adversary Model
@@ -102,7 +99,6 @@ We explicitly do **not** assume a trusted host, trusted relay, or secure enclave
 
 * **Traffic analysis resistance:** IP addresses and timing may reveal participation patterns.
 * **Global anonymity:** OpenSlots does not provide network-layer anonymity; users requiring stronger protections should combine it with anonymity networks (e.g., Tor) or relay access via privacy-preserving proxies.
-
 
 ## 5. Cryptographic Design
 
