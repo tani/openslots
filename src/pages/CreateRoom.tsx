@@ -8,6 +8,8 @@ import { AppHeader } from "../components/AppHeader";
 import { publishRoom } from "../utils/nostr";
 import { generateSlots } from "../utils/temporal";
 
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 export function CreateRoom() {
   const location = useLocation();
   const today = Temporal.Now.plainDateISO();
@@ -27,14 +29,7 @@ export function CreateRoom() {
 
   const normalizedDates = useComputed(() =>
     Array.from(selectedDates.value)
-      .filter((value) => {
-        try {
-          Temporal.PlainDate.from(value);
-          return true;
-        } catch {
-          return false;
-        }
-      })
+      .filter((value) => ISO_DATE_PATTERN.test(value))
       .sort(),
   );
 

@@ -75,3 +75,58 @@ test("CreateRoom handles no selected dates", () => {
   fireEvent.click(screen.getByRole("button", { name: "Clear dates" }));
   expect(screen.getByText(/0 slots/i)).toBeTruthy();
 });
+
+test("CreateRoom toggles dates from the calendar", () => {
+  render(<CreateRoom />);
+
+  expect(screen.getByText(/7 selected/i)).toBeTruthy();
+  const dateButtons = screen.getAllByRole("button", {
+    name: /Toggle date \d{4}-\d{2}-\d{2}/,
+  });
+  const target = dateButtons.find(
+    (button) => button.getAttribute("aria-pressed") === "true",
+  );
+  if (!target) throw new Error("Expected a selected date");
+  fireEvent.click(target);
+  expect(screen.getByText(/6 selected/i)).toBeTruthy();
+});
+
+test("CreateRoom selects a new date from the calendar", () => {
+  render(<CreateRoom />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Clear dates" }));
+  const dateButtons = screen.getAllByRole("button", {
+    name: /Toggle date \d{4}-\d{2}-\d{2}/,
+  });
+  const target = dateButtons.find(
+    (button) => button.getAttribute("aria-pressed") === "false",
+  );
+  if (!target) throw new Error("Expected an unselected date");
+  fireEvent.click(target);
+  expect(screen.getByText(/1 selected/i)).toBeTruthy();
+});
+
+test("CreateRoom navigates calendar months", () => {
+  render(<CreateRoom />);
+
+  const currentLabel = screen.getByText(/[A-Za-z]+ \d{4}/).textContent;
+  const nextButton = screen.getByRole("button", { name: "Next month" });
+  fireEvent.click(nextButton);
+  const nextLabel = screen.getByText(/[A-Za-z]+ \d{4}/).textContent;
+  expect(nextLabel).not.toBe(currentLabel);
+  const prevButton = screen.getByRole("button", { name: "Previous month" });
+  fireEvent.click(prevButton);
+  const restoredLabel = screen.getByText(/[A-Za-z]+ \d{4}/).textContent;
+  expect(restoredLabel).toBe(currentLabel);
+});
+
+test("CreateRoom removes a selected date from the list", () => {
+  render(<CreateRoom />);
+
+  const removeButtons = screen.getAllByRole("button", {
+    name: /Remove \d{4}-\d{2}-\d{2}/,
+  });
+  if (!removeButtons[0]) throw new Error("Expected a removable date");
+  fireEvent.click(removeButtons[0]);
+  expect(screen.getByText(/6 selected/i)).toBeTruthy();
+});
