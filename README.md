@@ -230,7 +230,7 @@ A complementary view of key usage for indexing and secrecy is given below.
 ```mermaid
 flowchart TD
     subgraph Client [Browser Client]
-        RoomKey[Room Key (from URL \#)]
+        RoomKey[Room Key: from URL \#]
         RoomID[Room UUID]
         Data[Meeting Details]
     end
@@ -241,7 +241,7 @@ flowchart TD
     end
 
     subgraph Network [Public Network]
-        Index[Blinded Index (d-tag)]
+        Index[Blinded Index: d-tag]
         Payload[Encrypted Content]
     end
 
