@@ -160,11 +160,9 @@ test("JoinRoom shares via Web Share API and clears status", async () => {
     configurable: true,
   });
 
-  let timeoutCallback: (() => void) | null = null;
   const originalSetTimeout = globalThis.setTimeout;
   const originalClearTimeout = globalThis.clearTimeout;
   const setTimeoutMock = mock((callback: () => void) => {
-    timeoutCallback = callback;
     return 0 as unknown as number;
   });
 
@@ -184,8 +182,11 @@ test("JoinRoom shares via Web Share API and clears status", async () => {
     expect(screen.getByText("Shared")).toBeTruthy();
 
     expect(setTimeoutMock).toHaveBeenCalledTimes(1);
-    expect(timeoutCallback).toBeTruthy();
-    timeoutCallback?.();
+    const [capturedCallback] = setTimeoutMock.mock.calls[0] ?? [];
+    expect(typeof capturedCallback).toBe("function");
+    if (typeof capturedCallback === "function") {
+      capturedCallback();
+    }
   } finally {
     Object.defineProperty(navigator, "share", {
       value: originalShare,
