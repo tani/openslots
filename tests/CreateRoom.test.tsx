@@ -54,12 +54,6 @@ test("CreateRoom renders form and creates room with key", async () => {
 test("CreateRoom updates inputs and handles invalid time", () => {
   render(<CreateRoom />);
 
-  const startDate = screen.getByLabelText(/Start date/i);
-  fireEvent.input(startDate, { target: { value: "2024-02-01" } });
-
-  const endDate = screen.getByLabelText(/End date/i);
-  fireEvent.input(endDate, { target: { value: "2024-02-02" } });
-
   const startTime = screen.getByLabelText(/Start time/i);
   fireEvent.input(startTime, { target: { value: "invalid" } });
 
@@ -75,20 +69,9 @@ test("CreateRoom updates inputs and handles invalid time", () => {
   expect(screen.getByText(/0 slots/i)).toBeTruthy();
 });
 
-test("CreateRoom handles invalid end date", () => {
+test("CreateRoom handles no selected dates", () => {
   render(<CreateRoom />);
 
-  const startDate = screen.getByLabelText(/Start date/i);
-  fireEvent.input(startDate, { target: { value: "2024-02-01" } });
-
-  const endDate = screen.getByLabelText(/End date/i);
-  fireEvent.input(endDate, { target: { value: "invalid" } });
-
-  const startTime = screen.getByLabelText(/Start time/i);
-  fireEvent.input(startTime, { target: { value: "09:00" } });
-
-  const endTime = screen.getByLabelText(/End time/i);
-  fireEvent.input(endTime, { target: { value: "10:00" } });
-
+  fireEvent.click(screen.getByRole("button", { name: "Clear dates" }));
   expect(screen.getByText(/0 slots/i)).toBeTruthy();
 });
