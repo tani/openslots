@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025-present Masaya Taniguchi
 
-import { ENTRY, OUTDIR, sassPlugin } from "./shared";
+import sassPlugin from "./bun-plugin-sass";
+
+const ENTRY = "./src/index.html";
+const OUTDIR = "dist";
 
 const result = await Bun.build({
   entrypoints: [ENTRY],

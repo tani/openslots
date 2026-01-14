@@ -4,8 +4,8 @@
   "type": "module",
   "license": "GPL-3.0-or-later",
   "scripts": {
-    "dev": "bun run scripts/dev.ts",
-    "start": "bun run scripts/dev.ts",
+    "dev": "bun ./src/index.html",
+    "start": "bun ./src/index.html",
     "build": "bun run scripts/build.ts",
     "test": "bun test",
     "lint": "biome check .",

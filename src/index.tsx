@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025-present Masaya Taniguchi
 
-import "./styles.scss";
 import { render } from "preact";
 import { LocationProvider, Route, Router } from "preact-iso";
 

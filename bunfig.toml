@@ -5,3 +5,6 @@
 preload = ["./tests/happydom.ts"]
 coverage = true
 coverageThreshold = 1.0
+
+[serve.static]
+plugins = ["./scripts/bun-plugin-sass.ts"]
