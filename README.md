@@ -7,8 +7,10 @@
   <img
     src="https://github.com/user-attachments/assets/21dc7dcf-7d1b-49d4-a34d-35424afb9f79"
     width="600"
-  />
+  /><br>
+  <a href="https://openslots.pages.dev">https://openslots.pages.dev</a>
 </p>
+
 
 ## Abstract
 
