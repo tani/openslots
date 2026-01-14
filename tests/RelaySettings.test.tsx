@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2025-present Masaya Taniguchi
+
 import { afterEach, beforeEach, describe, expect, test, vi } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/preact";
 import { RelaySettings } from "../src/components/RelaySettings";

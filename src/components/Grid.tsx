@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2025-present Masaya Taniguchi
+
 import { useSignal, useSignalEffect } from "@preact/signals";
 import {
   currentSelections,

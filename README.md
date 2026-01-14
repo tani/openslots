@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2025-present Masaya Taniguchi -->
+
 # OpenSlots: A Trustless, Privacy-Preserving Scheduling Protocol over Nostr
 
 ## Abstract

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2025-present Masaya Taniguchi
+
 import { existsSync, watch } from "node:fs";
 import { join } from "node:path";
 

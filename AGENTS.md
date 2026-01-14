@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2025-present Masaya Taniguchi -->
+
 # Repository Guidelines
 
 ## Project Structure & Module Organization
@@ -26,6 +29,7 @@
 - Components use `PascalCase` file names (`Grid.tsx`) and exports.
 - Utility modules are `camelCase` or descriptive (`temporal.ts`, `nostr.ts`).
 - Keep CSS in UnoCSS utility classes; avoid external UI libraries.
+- Add SPDX and copyright headers to new source/docs where comments are supported.
 
 ## State Management & Reactivity (Signals-First)
 

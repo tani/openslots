@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2025-present Masaya Taniguchi
+
 import { nip44 } from "nostr-tools";
 
 // Helper to convert hex string to Uint8Array

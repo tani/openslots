@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2025-present Masaya Taniguchi
+
 /// <reference lib="dom" />
 import { expect, test } from "bun:test";
 import { render, screen } from "@testing-library/preact";

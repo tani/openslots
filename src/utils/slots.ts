@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2025-present Masaya Taniguchi
+
 const SLOT_SECONDS = 30 * 60;
 
 export type SlotMask = {

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2025-present Masaya Taniguchi
+
 import { describe, expect, it } from "bun:test";
 import { Temporal } from "@js-temporal/polyfill";
 import {
