@@ -11,8 +11,8 @@
   - `src/signals/` keeps global state (`store.ts`).
   - `src/utils/` includes Nostr + Temporal helpers.
 - `tests/` contains Bun tests (e.g., `tests/temporal.test.ts`).
-- `scripts/serve.ts` runs dev build + watch + SPA server.
-- `scripts/build.ts` runs production build to `dist/`.
+- `bun ./src/index.html` runs the dev server with SPA routing.
+- `bun build ./src/index.html --minify --outdir=dist` builds production assets to `dist/`.
 - `uno.config.ts` configures UnoCSS.
 
 ## Build, Test, and Development Commands
@@ -67,5 +67,5 @@ PRs should include: summary, test status, and screenshots for UI changes.
 
 - Nostr relays are configured in `src/utils/nostr.ts`.
 - Room/response events use Kind 30030 with NIP-44 encrypted payloads.
-- Build output includes `dist/index.html` and `dist/index.css`.
+- Build output includes `dist/index.html` and bundled assets in `dist/`.
 - `bunfig.toml` enforces 100% coverage thresholds for tests.

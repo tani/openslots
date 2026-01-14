@@ -4,9 +4,9 @@
   "type": "module",
   "license": "GPL-3.0-or-later",
   "scripts": {
-    "dev": "bun run scripts/serve.ts",
-    "start": "bun run scripts/serve.ts",
-    "build": "bun run scripts/build.ts",
+    "dev": "bun ./src/index.html",
+    "start": "bun ./src/index.html",
+    "build": "bun build ./src/index.html --minify --outdir=dist",
     "test": "bun test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
