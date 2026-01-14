@@ -326,3 +326,13 @@ There is significant academic work in **Private Set Intersection (PSI)** and **S
 | **SaaS (Calendly)** | Central DB | Policy-based | The Company |
 | **Self-Hosted (Cal.com)** | Your DB | Access Control | The Admin |
 | **OpenSlots** | Public Relays | **End-to-End Encrypted** | **The URL / Client** |
+
+---
+
+## Appendix C. Code Quality Expectations
+
+This project enforces strict code quality to keep cryptographic and scheduling logic reliable:
+
+* **Test Coverage:** The suite targets 100% coverage across lines and functions. New changes should preserve that bar.
+* **Static Checks:** Linting, type checking, and builds must pass (`bun run lint`, `bun run typecheck`, `bun run build`).
+* **Test Suite:** Always run `bun test` to validate behavior and maintain deterministic outcomes.
