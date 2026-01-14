@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025-present Masaya Taniguchi
 
-import NDK, { NDKEvent, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
+import type { Filter, Event as NostrEvent } from "nostr-tools";
+import {
+  finalizeEvent,
+  generateSecretKey,
+  getPublicKey,
+  nip19,
+  SimplePool,
+} from "nostr-tools";
 import { upsertResponse } from "../signals/store";
 import {
   decryptData,
@@ -34,49 +41,81 @@ export function getRelays(): string[] {
 
 export function setRelays(relays: string[]) {
   window.localStorage.setItem("openslots_relays", JSON.stringify(relays));
-  _resetNDK();
+  _resetPool();
 }
 
-let ndkInstance: NDK | null = null;
+let poolInstance: SimplePool | null = null;
+let signerKey: Uint8Array | null = null;
 
 function getStorageKey(): string {
   return "openslots_private_key";
 }
 
-async function getSigner() {
+function hexToBytes(hex: string): Uint8Array {
+  if (hex.length % 2 !== 0) throw new Error("Invalid hex string");
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i += 1) {
+    bytes[i] = Number.parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return bytes;
+}
+
+function parsePrivateKey(value: string): Uint8Array | null {
+  if (value.startsWith("nsec")) {
+    try {
+      const decoded = nip19.decode(value);
+      if (decoded.type === "nsec") {
+        return decoded.data as Uint8Array;
+      }
+    } catch {
+      return null;
+    }
+  }
+  if (/^[0-9a-f]{64}$/i.test(value)) {
+    return hexToBytes(value);
+  }
+  return null;
+}
+
+async function getSignerKey(): Promise<Uint8Array> {
+  if (signerKey) return signerKey;
   if (typeof window === "undefined" || !window.localStorage) {
-    return NDKPrivateKeySigner.generate();
+    signerKey = generateSecretKey();
+    return signerKey;
   }
 
   const existing = window.localStorage.getItem(getStorageKey());
   if (existing) {
-    return new NDKPrivateKeySigner(existing);
+    const decoded = parsePrivateKey(existing);
+    if (decoded) {
+      signerKey = decoded;
+      return signerKey;
+    }
   }
 
-  const signer = NDKPrivateKeySigner.generate();
-  const key = await signer.nsec;
-  window.localStorage.setItem(getStorageKey(), key);
-  return signer;
+  signerKey = generateSecretKey();
+  window.localStorage.setItem(getStorageKey(), nip19.nsecEncode(signerKey));
+  return signerKey;
 }
 
 export async function getMyPubkey(): Promise<string> {
-  const signer = await getSigner();
-  const user = await signer.user();
-  return user.pubkey;
+  const sk = await getSignerKey();
+  return getPublicKey(sk);
 }
 
-export async function initNDK() {
-  if (ndkInstance) return ndkInstance;
-
-  const ndk = new NDK({ explicitRelayUrls: getRelays() });
-  ndk.signer = await getSigner();
-  await ndk.connect();
-  ndkInstance = ndk;
-  return ndk;
+export async function initPool() {
+  if (!poolInstance) {
+    poolInstance = new SimplePool();
+  }
+  return poolInstance;
 }
 
-export function _resetNDK() {
-  ndkInstance = null;
+export function _resetPool() {
+  if (poolInstance) {
+    poolInstance.close(getRelays());
+  }
+  poolInstance = null;
+  signerKey = null;
 }
 
 export async function publishRoom(input: {
@@ -85,24 +124,30 @@ export async function publishRoom(input: {
   options: string[];
   roomKey: string;
 }) {
-  const ndk = await initNDK();
-  const event = new NDKEvent(ndk);
-  event.kind = 30078;
-
   const blindedId = await deriveBlindedId(input.roomId, input.roomKey);
   const { start, mask } = buildSlotMask(input.options);
   const encryptedContent = await encryptData(
     JSON.stringify({ t: input.title, s: start, o: mask }),
     input.roomKey,
   );
+  const sk = await getSignerKey();
+  const event = finalizeEvent(
+    {
+      kind: 30078,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [
+        ["d", blindedId],
+        ["t", "openslots"],
+        // title/options hidden
+      ],
+      content: encryptedContent,
+      pubkey: getPublicKey(sk),
+    },
+    sk,
+  );
 
-  event.tags = [
-    ["d", blindedId],
-    ["t", "openslots"],
-    // title/options hidden
-  ];
-  event.content = encryptedContent;
-  await event.publish();
+  const pool = await initPool();
+  await pool.publish(getRelays(), event);
   return event;
 }
 
@@ -114,11 +159,8 @@ export async function publishResponse(input: {
   slotStart: number;
   slotCount: number;
 }) {
-  const ndk = await initNDK();
-  const event = new NDKEvent(ndk);
-  event.kind = 30078;
-
-  const pubkey = await getMyPubkey();
+  const sk = await getSignerKey();
+  const pubkey = getPublicKey(sk);
   const responseId = await deriveResponseId(
     pubkey,
     input.rootId,
@@ -129,22 +171,33 @@ export async function publishResponse(input: {
     input.slotCount,
     input.slots,
   );
-  event.tags = [
-    ["e", input.rootId],
-    ["d", responseId],
-    ["t", "openslots"],
-  ];
-  event.content = await encryptData(
+  const encryptedContent = await encryptData(
     JSON.stringify({ n: input.name, o: selectionMask }),
     input.roomKey,
   );
-  await event.publish();
+  const event = finalizeEvent(
+    {
+      kind: 30078,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [
+        ["e", input.rootId],
+        ["d", responseId],
+        ["t", "openslots"],
+      ],
+      content: encryptedContent,
+      pubkey,
+    },
+    sk,
+  );
+
+  const pool = await initPool();
+  await pool.publish(getRelays(), event);
   return event;
 }
 
 export async function subscribeToRoom(blindedRoomId: string, roomKey: string) {
-  const ndk = await initNDK();
-  const root = await ndk.fetchEvent({
+  const pool = await initPool();
+  const root = await pool.get(getRelays(), {
     kinds: [30078],
     "#d": [blindedRoomId],
     "#t": ["openslots"],
@@ -166,12 +219,12 @@ export async function subscribeToRoom(blindedRoomId: string, roomKey: string) {
     return null;
   }
 
-  const sub = ndk.subscribe(
+  const filters: Filter[] = [
     { kinds: [30078], "#e": [root.id], "#t": ["openslots"] },
-    { closeOnEose: false },
-  );
+  ];
+  const sub = pool.sub(getRelays(), filters, { closeOnEose: false });
 
-  sub.on("event", async (event: NDKEvent) => {
+  sub.on("event", async (event: NostrEvent) => {
     // Avoid processing root event as response
     if (event.id === root.id) return;
 
@@ -200,5 +253,9 @@ export async function subscribeToRoom(blindedRoomId: string, roomKey: string) {
     });
   });
 
-  return { root, sub, room: { title: roomTitle, slots, slotStart, slotMask } };
+  return {
+    root,
+    sub: { stop: () => sub.unsub() },
+    room: { title: roomTitle, slots, slotStart, slotMask },
+  };
 }

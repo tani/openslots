@@ -2,8 +2,8 @@
 // Copyright (C) 2025-present Masaya Taniguchi
 
 import { Temporal } from "@js-temporal/polyfill";
-import type { NDKEvent, NDKSubscription } from "@nostr-dev-kit/ndk";
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals";
+import type { Event as NostrEvent } from "nostr-tools";
 import { AppHeader } from "../components/AppHeader";
 import { Grid } from "../components/Grid";
 import { Sidebar } from "../components/Sidebar";
@@ -48,8 +48,8 @@ export function JoinRoom(props: { id?: string }) {
   currentRoomId.value = props.id ?? "";
 
   const roomResource = useSignal<{
-    root: NDKEvent;
-    sub: NDKSubscription;
+    root: NostrEvent;
+    sub: { stop: () => void };
     room: {
       title: string;
       slots: string[];

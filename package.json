@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun ./src/index.html",
     "start": "bun ./src/index.html",
-    "build": "bun build ./src/index.html --minify --outdir=dist",
+    "build": "bun build ./src/index.html --minify --splitting --outdir=dist",
     "test": "bun test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.4.4",
-    "@nostr-dev-kit/ndk": "^2.8.2",
     "@preact/signals": "^1.2.2",
     "bootswatch": "^5.3.8",
     "nostr-tools": "^2.19.4",

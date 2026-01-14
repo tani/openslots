@@ -11,49 +11,49 @@ import {
   spyOn,
 } from "bun:test";
 
-// 1. Mock NDK
-mock.module("@nostr-dev-kit/ndk", () => {
-  const mockPublish = mock(() => Promise.resolve());
+// 1. Mock nostr-tools
+mock.module("nostr-tools", () => {
+  class MockSimplePool {
+    get = mock(() => Promise.resolve(null));
+    publish = mock(() => Promise.resolve());
+    sub = mock(() => ({
+      on: mock(),
+      unsub: mock(),
+    }));
+    close = mock(() => {});
+  }
 
   return {
-    default: class MockNDK {
-      signer = undefined;
-      connect = mock(() => Promise.resolve());
-      fetchEvent = mock(() => Promise.resolve(null));
-      subscribe = mock(() => ({
-        on: mock(),
-        stop: mock(),
-      }));
-    },
-    NDKEvent: class MockNDKEvent {
-      kind = 0;
-      tags = [];
-      content = "";
-      publish = mockPublish;
-    },
-    NDKPrivateKeySigner: class MockSigner {
-      static generate() {
-        return new MockSigner();
-      }
-
-      nsec = Promise.resolve("mock-nsec");
-
-      user() {
-        return Promise.resolve({ pubkey: "mock-pubkey" });
-      }
+    SimplePool: MockSimplePool,
+    generateSecretKey: () => new Uint8Array(32),
+    getPublicKey: () => "mock-pubkey",
+    finalizeEvent: (event: {
+      kind: number;
+      created_at: number;
+      tags: string[][];
+      content: string;
+      pubkey: string;
+    }) => ({
+      ...event,
+      id: "mock-id",
+      sig: "mock-sig",
+    }),
+    nip19: {
+      nsecEncode: () => "nsec-test",
+      decode: () => ({ type: "nsec", data: new Uint8Array(32) }),
     },
   };
 });
 
+import * as nostrTools from "nostr-tools";
 import * as store from "../src/signals/store";
 import * as cryptoUtils from "../src/utils/crypto";
-
 // Import local code
 import {
-  _resetNDK,
+  _resetPool,
   getMyPubkey,
   getRelays,
-  initNDK,
+  initPool,
   publishResponse,
   publishRoom,
   setRelays,
@@ -67,7 +67,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
   beforeEach(() => {
     mock.restore();
     window.localStorage.clear();
-    _resetNDK();
+    _resetPool();
     spyOn(store, "upsertResponse").mockImplementation(() => {});
     spyOn(cryptoUtils, "deriveBlindedId").mockImplementation(
       async (id: string, _key: string) => `blinded-${id}`,
@@ -89,16 +89,15 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     mock.restore();
   });
 
-  it("should initialize NDK", async () => {
-    const ndk = await initNDK();
-    expect(ndk.connect).toHaveBeenCalled();
+  it("should initialize relay pool", async () => {
+    const pool = await initPool();
+    expect(pool).toBeTruthy();
   });
 
-  it("reuses the cached NDK instance", async () => {
-    const ndk1 = await initNDK();
-    const ndk2 = await initNDK();
-    expect(ndk1).toBe(ndk2);
-    expect(ndk1.connect).toHaveBeenCalledTimes(1);
+  it("reuses the cached pool instance", async () => {
+    const pool1 = await initPool();
+    const pool2 = await initPool();
+    expect(pool1).toBe(pool2);
   });
 
   it("returns defaults when relays storage is invalid", () => {
@@ -116,6 +115,13 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
       JSON.stringify(["wss://example.com"]),
     );
     expect(getRelays()).toEqual(["wss://example.com"]);
+  });
+
+  it("closes pool connections when relays change", async () => {
+    const pool = await initPool();
+    const closeSpy = spyOn(pool, "close");
+    setRelays(["wss://example.com"]);
+    expect(closeSpy).toHaveBeenCalled();
   });
 
   it("generates signer when localStorage is missing", async () => {
@@ -142,6 +148,33 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
 
   it("uses stored private key when available", async () => {
     window.localStorage.setItem("openslots_private_key", "nsec-test");
+    const pubkey = await getMyPubkey();
+    expect(pubkey).toBe("mock-pubkey");
+  });
+
+  it("uses stored hex private key when available", async () => {
+    window.localStorage.setItem(
+      "openslots_private_key",
+      "0000000000000000000000000000000000000000000000000000000000000001",
+    );
+    const pubkey = await getMyPubkey();
+    expect(pubkey).toBe("mock-pubkey");
+  });
+
+  it("recovers when stored nsec cannot be decoded", async () => {
+    const decodeSpy = spyOn(nostrTools.nip19, "decode").mockImplementation(
+      () => {
+        throw new Error("bad nsec");
+      },
+    );
+    window.localStorage.setItem("openslots_private_key", "nsec-invalid");
+    const pubkey = await getMyPubkey();
+    expect(pubkey).toBe("mock-pubkey");
+    decodeSpy.mockRestore();
+  });
+
+  it("regenerates when stored key is invalid", async () => {
+    window.localStorage.setItem("openslots_private_key", "not-a-key");
     const pubkey = await getMyPubkey();
     expect(pubkey).toBe("mock-pubkey");
   });
@@ -198,24 +231,24 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
   });
 
   it("ignores responses with mismatched d tags", async () => {
-    const ndk = await initNDK();
+    const pool = await initPool();
     const rootEvent = {
       id: "root-1",
       content: `encrypted-${JSON.stringify({ t: "Room", s: 1800, o: "1" })}`,
       tags: [],
     };
-    const fetchEventMock = ndk.fetchEvent as unknown as ReturnType<typeof mock>;
-    fetchEventMock.mockResolvedValue(rootEvent);
-    const subscribeMock = ndk.subscribe as unknown as ReturnType<typeof mock>;
-    subscribeMock.mockImplementation(() => {
+    const getMock = pool.get as unknown as ReturnType<typeof mock>;
+    getMock.mockResolvedValue(rootEvent);
+    const subMock = pool.sub as unknown as ReturnType<typeof mock>;
+    subMock.mockImplementation(() => {
       const on = mock();
-      return { on, stop: mock() };
+      return { on, unsub: mock() };
     });
 
     const result = await subscribeToRoom("blinded-root-1", MOCK_KEY);
     if (!result) throw new Error("Expected room result");
 
-    const subscription = subscribeMock.mock.results[0]?.value;
+    const subscription = subMock.mock.results[0]?.value;
     const onHandler = subscription?.on;
     const onCall = onHandler?.mock.calls.find(
       (call: unknown[]) => call[0] === "event",
@@ -233,27 +266,29 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
 
     await Promise.resolve();
     expect(store.upsertResponse).not.toHaveBeenCalled();
+    result.sub.stop();
+    expect(subscription?.unsub).toHaveBeenCalled();
   });
 
   it("ignores responses without d tags", async () => {
-    const ndk = await initNDK();
+    const pool = await initPool();
     const rootEvent = {
       id: "root-1",
       content: `encrypted-${JSON.stringify({ t: "Room", s: 1800, o: "1" })}`,
       tags: [],
     };
-    const fetchEventMock = ndk.fetchEvent as unknown as ReturnType<typeof mock>;
-    fetchEventMock.mockResolvedValue(rootEvent);
-    const subscribeMock = ndk.subscribe as unknown as ReturnType<typeof mock>;
-    subscribeMock.mockImplementation(() => {
+    const getMock = pool.get as unknown as ReturnType<typeof mock>;
+    getMock.mockResolvedValue(rootEvent);
+    const subMock = pool.sub as unknown as ReturnType<typeof mock>;
+    subMock.mockImplementation(() => {
       const on = mock();
-      return { on, stop: mock() };
+      return { on, unsub: mock() };
     });
 
     const result = await subscribeToRoom("blinded-root-1", MOCK_KEY);
     if (!result) throw new Error("Expected room result");
 
-    const subscription = subscribeMock.mock.results[0]?.value;
+    const subscription = subMock.mock.results[0]?.value;
     const onHandler = subscription?.on;
     const onCall = onHandler?.mock.calls.find(
       (call: unknown[]) => call[0] === "event",
@@ -274,47 +309,47 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
   });
 
   it("returns null when room payload cannot be decrypted", async () => {
-    const ndk = await initNDK();
+    const pool = await initPool();
     const rootEvent = {
       id: "root-1",
       content: "encrypted-{bad",
       tags: [],
     };
-    const fetchEventMock = ndk.fetchEvent as unknown as ReturnType<typeof mock>;
-    fetchEventMock.mockResolvedValue(rootEvent);
+    const getMock = pool.get as unknown as ReturnType<typeof mock>;
+    getMock.mockResolvedValue(rootEvent);
 
     const result = await subscribeToRoom("blinded-root-1", MOCK_KEY);
     expect(result).toBeNull();
   });
 
   it("returns null when no room event exists", async () => {
-    const ndk = await initNDK();
-    const fetchEventMock = ndk.fetchEvent as unknown as ReturnType<typeof mock>;
-    fetchEventMock.mockResolvedValue(null);
+    const pool = await initPool();
+    const getMock = pool.get as unknown as ReturnType<typeof mock>;
+    getMock.mockResolvedValue(null);
 
     const result = await subscribeToRoom("blinded-root-1", MOCK_KEY);
     expect(result).toBeNull();
   });
 
   it("updates responses when d tag matches signer", async () => {
-    const ndk = await initNDK();
+    const pool = await initPool();
     const rootEvent = {
       id: "root-1",
       content: `encrypted-${JSON.stringify({ t: "Room", s: 1800, o: "1" })}`,
       tags: [],
     };
-    const fetchEventMock = ndk.fetchEvent as unknown as ReturnType<typeof mock>;
-    fetchEventMock.mockResolvedValue(rootEvent);
-    const subscribeMock = ndk.subscribe as unknown as ReturnType<typeof mock>;
-    subscribeMock.mockImplementation(() => {
+    const getMock = pool.get as unknown as ReturnType<typeof mock>;
+    getMock.mockResolvedValue(rootEvent);
+    const subMock = pool.sub as unknown as ReturnType<typeof mock>;
+    subMock.mockImplementation(() => {
       const on = mock();
-      return { on, stop: mock() };
+      return { on, unsub: mock() };
     });
 
     const result = await subscribeToRoom("blinded-root-1", MOCK_KEY);
     if (!result) throw new Error("Expected room result");
 
-    const subscription = subscribeMock.mock.results[0]?.value;
+    const subscription = subMock.mock.results[0]?.value;
     const onHandler = subscription?.on;
     const onCall = onHandler?.mock.calls.find(
       (call: unknown[]) => call[0] === "event",
@@ -339,24 +374,24 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
   });
 
   it("records decryption errors for responses", async () => {
-    const ndk = await initNDK();
+    const pool = await initPool();
     const rootEvent = {
       id: "root-1",
       content: `encrypted-${JSON.stringify({ t: "Room", s: 1800, o: "1" })}`,
       tags: [],
     };
-    const fetchEventMock = ndk.fetchEvent as unknown as ReturnType<typeof mock>;
-    fetchEventMock.mockResolvedValue(rootEvent);
-    const subscribeMock = ndk.subscribe as unknown as ReturnType<typeof mock>;
-    subscribeMock.mockImplementation(() => {
+    const getMock = pool.get as unknown as ReturnType<typeof mock>;
+    getMock.mockResolvedValue(rootEvent);
+    const subMock = pool.sub as unknown as ReturnType<typeof mock>;
+    subMock.mockImplementation(() => {
       const on = mock();
-      return { on, stop: mock() };
+      return { on, unsub: mock() };
     });
 
     const result = await subscribeToRoom("blinded-root-1", MOCK_KEY);
     if (!result) throw new Error("Expected room result");
 
-    const subscription = subscribeMock.mock.results[0]?.value;
+    const subscription = subMock.mock.results[0]?.value;
     const onHandler = subscription?.on;
     const onCall = onHandler?.mock.calls.find(
       (call: unknown[]) => call[0] === "event",
