@@ -108,7 +108,7 @@ We explicitly do **not** assume a trusted host, trusted relay, or secure enclave
 
 OpenSlots distributes the room’s symmetric key using a URL fragment. Standard browser behavior does not transmit the fragment portion (after `#`) in HTTP requests, enabling key distribution without server disclosure.
 
-* **URL form:** `https://openslots.org/room/<UUID>#<Key>`
+* **URL form:** `https://openslots.pages.dev/room/<UUID>#<Key>`
 * **Key:** 32-byte random value generated client-side
 
 Under this construction, the static host learns only that the application was loaded; it does not learn the room key and cannot decrypt relay content.
