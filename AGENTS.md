@@ -51,8 +51,17 @@
 
 ## Commit & Pull Request Guidelines
 
-- Use concise, imperative commit messages (e.g., "Add grid drag selection").
+- Use concise, imperative commit messages.
 PRs should include: summary, test status, and screenshots for UI changes.
+
+```text
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+
+```
 
 ## Configuration Notes
 
