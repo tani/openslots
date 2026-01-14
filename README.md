@@ -129,13 +129,13 @@ Security is therefore reduced to the confidentiality and integrity properties of
 
 ### 5.4 Key Separation Considerations
 
-Using a single key for both HMAC and encryption is convenient but introduces conceptual coupling. A more conservative alternative is to derive independent subkeys using a KDF:
+OpenSlots derives independent subkeys using HKDF to avoid coupling HMAC and encryption contexts:
 
 $$
 K_{\text{enc}}, K_{\text{hmac}} = \operatorname{HKDF}(K_{\text{room}}, \text{context})
 $$
 
-While the current design remains practical, adopting explicit key separation would better align with cryptographic best practices and simplify security proofs.
+This explicit key separation aligns with cryptographic best practices and simplifies reasoning about security boundaries.
 
 ---
 
@@ -292,7 +292,7 @@ While the core protocol is defined above, the following implementation details a
 
 * **Time Zone Serialization:** JavaScript's `Date` object is notoriously flaky with time zones. We rely strictly on the **Temporal API** (using a polyfill where necessary) to ensure that slot definitions remain stable across DST transitions.
 * **JSON Readability vs. Size:** The bitmask encoding is designed for compactness. While Base64 encoding would save more space, we currently stick to a binary string in JSON for easier debugging during the alpha phase. Future versions may optimize this further.
-* **Key Derivation Best Practices:** Currently, the Room Key is used directly for both encryption and HMAC. To align with strict cryptographic hygiene, future PRs should implement **HKDF** (HMAC-based Key Derivation Function) to derive separate sub-keys for `encryption` and `indexing` contexts.
+* **Key Derivation Best Practices:** OpenSlots derives separate sub-keys for `encryption` and `indexing` using **HKDF** (HMAC-based Key Derivation Function), avoiding key reuse across contexts.
 
 ---
 
