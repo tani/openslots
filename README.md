@@ -3,6 +3,13 @@
 
 # OpenSlots: A Trustless, Privacy-Preserving Scheduling Protocol over Nostr
 
+<p align="center">
+  <img
+    src="https://github.com/user-attachments/assets/4ae6506b-eda1-4780-a097-cfa1029af3eb"
+    width="600"
+  />
+</p>
+
 ## Abstract
 
 Centralized scheduling services provide usability at the cost of extensive metadata exposure, including social-graph inference (who meets whom), temporal patterns (when), and contextual cues (often why). This project presents **OpenSlots**, a zero-knowledge scheduling application implemented as a browser-based thick client atop the **Nostr** relay network. OpenSlots decouples application logic from storage by publishing encrypted, replaceable events to untrusted relays while distributing decryption capability exclusively via URL fragments. The design integrates (i) client-side key generation and end-to-end encryption using **NIP-44** (ChaCha20-Poly1305), (ii) *blinded indexing* via **HMAC-SHA256** to mitigate relay-side observability of room identifiers, and (iii) compact availability encoding via bitmask compression to respect relay payload constraints. This README documents the adversary model, analyzes confidentiality and metadata leakage, and discusses operational trade-offs and limitations. The resulting system provides a censorship-resistant and trust-minimized alternative to centralized platforms such as Doodle or Calendly.
