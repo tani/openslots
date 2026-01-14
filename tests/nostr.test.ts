@@ -42,8 +42,9 @@ mock.module("../src/utils/crypto", () => ({
   deriveBlindedId: async (id: string, _key: string) => `blinded-${id}`,
   deriveResponseId: async (pubkey: string, roomId: string, _key: string) =>
     `response-${pubkey}-${roomId}`,
-  encryptData: (text: string, _key: string) => `encrypted-${text}`,
-  decryptData: (text: string, _key: string) => text.replace("encrypted-", ""),
+  encryptData: async (text: string, _key: string) => `encrypted-${text}`,
+  decryptData: async (text: string, _key: string) =>
+    text.replace("encrypted-", ""),
   getOrCreateRoomKey: () => "mock-key",
 }));
 
@@ -154,7 +155,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     expect(event.tags.some((t) => t[0] === "options")).toBe(false);
 
     // Content should be encrypted
-    const decrypted = decryptData(event.content, MOCK_KEY);
+    const decrypted = await decryptData(event.content, MOCK_KEY);
     const parsed = JSON.parse(decrypted);
     expect(parsed.t).toBe("Secret Sync");
     expect(parsed.s).toBe(1800);
@@ -174,7 +175,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     const event = await publishResponse(responseData);
 
     expect(event.tags).toContainEqual(["e", "root-event-id"]);
-    const decrypted = decryptData(event.content, MOCK_KEY);
+    const decrypted = await decryptData(event.content, MOCK_KEY);
     const parsed = JSON.parse(decrypted);
     expect(parsed.n).toBe("Alice");
     expect(parsed.o).toBe("10");
@@ -204,7 +205,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     const emit = onCall?.[1];
     if (!emit) throw new Error("Missing event handler");
 
-    emit({
+    await emit({
       id: "response-1",
       pubkey: "attacker-pubkey",
       tags: [["d", "response-victim-root-1"]],
@@ -240,7 +241,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     const emit = onCall?.[1];
     if (!emit) throw new Error("Missing event handler");
 
-    emit({
+    await emit({
       id: "response-2",
       pubkey: "attacker-pubkey",
       tags: [],
@@ -299,7 +300,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     const emit = onCall?.[1];
     if (!emit) throw new Error("Missing event handler");
 
-    emit({
+    await emit({
       id: "response-1",
       pubkey: "user-1",
       tags: [["d", "response-user-1-root-1"]],
@@ -339,7 +340,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     const emit = onCall?.[1];
     if (!emit) throw new Error("Missing event handler");
 
-    emit({
+    await emit({
       id: "response-3",
       pubkey: "user-2",
       tags: [["d", "response-user-2-root-1"]],

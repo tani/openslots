@@ -4,13 +4,51 @@
 import { nip44 } from "nostr-tools";
 
 // Helper to convert hex string to Uint8Array
-function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
+function hexToBytes(hex: string): Uint8Array {
   if (hex.length % 2 !== 0) throw new Error("Invalid hex string");
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
   }
   return bytes;
+}
+
+function toArrayBuffer(view: Uint8Array): ArrayBuffer {
+  return Uint8Array.from(view).buffer;
+}
+
+const HKDF_SALT = "openslots-hkdf-salt";
+const HKDF_INFO_ENCRYPT = "openslots:encryption";
+const HKDF_INFO_HMAC = "openslots:hmac";
+
+async function deriveHkdfBits(roomKey: string, info: string): Promise<Uint8Array> {
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    toArrayBuffer(hexToBytes(roomKey)),
+    "HKDF",
+    false,
+    ["deriveBits"],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "HKDF",
+      hash: "SHA-256",
+      salt: encoder.encode(HKDF_SALT),
+      info: encoder.encode(info),
+    },
+    keyMaterial,
+    256,
+  );
+  return new Uint8Array(bits);
+}
+
+async function deriveHmacKey(roomKey: string): Promise<Uint8Array> {
+  return deriveHkdfBits(roomKey, HKDF_INFO_HMAC);
+}
+
+async function deriveEncryptionKey(roomKey: string): Promise<Uint8Array> {
+  return deriveHkdfBits(roomKey, HKDF_INFO_ENCRYPT);
 }
 
 /**
@@ -40,12 +78,12 @@ export async function deriveBlindedId(
   roomKey: string,
 ): Promise<string> {
   const encoder = new TextEncoder();
-  const keyData = hexToBytes(roomKey); // HMAC Key must be bytes
+  const keyData = await deriveHmacKey(roomKey);
   const msgData = encoder.encode(rawId);
 
   const cryptoKey = await crypto.subtle.importKey(
     "raw",
-    keyData,
+    toArrayBuffer(keyData),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -68,12 +106,18 @@ export async function deriveResponseId(
 /**
  * Encrypts data using NIP-44 (uses roomKey as a symmetric key).
  */
-export function encryptData(plaintext: string, roomKey: string): string {
-  const keyBytes = hexToBytes(roomKey);
+export async function encryptData(
+  plaintext: string,
+  roomKey: string,
+): Promise<string> {
+  const keyBytes = await deriveEncryptionKey(roomKey);
   return nip44.v2.encrypt(plaintext, keyBytes);
 }
 
-export function decryptData(ciphertext: string, roomKey: string): string {
-  const keyBytes = hexToBytes(roomKey);
+export async function decryptData(
+  ciphertext: string,
+  roomKey: string,
+): Promise<string> {
+  const keyBytes = await deriveEncryptionKey(roomKey);
   return nip44.v2.decrypt(ciphertext, keyBytes);
 }

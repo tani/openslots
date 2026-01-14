@@ -91,7 +91,7 @@ export async function publishRoom(input: {
 
   const blindedId = await deriveBlindedId(input.roomId, input.roomKey);
   const { start, mask } = buildSlotMask(input.options);
-  const encryptedContent = encryptData(
+  const encryptedContent = await encryptData(
     JSON.stringify({ t: input.title, s: start, o: mask }),
     input.roomKey,
   );
@@ -128,7 +128,7 @@ export async function publishResponse(input: {
     ["e", input.rootId],
     ["d", responseId],
   ];
-  event.content = encryptData(
+  event.content = await encryptData(
     JSON.stringify({ n: input.name, o: selectionMask }),
     input.roomKey,
   );
@@ -146,7 +146,7 @@ export async function subscribeToRoom(blindedRoomId: string, roomKey: string) {
   let slotMask = "";
   let slots: string[] = [];
   try {
-    const decoded = decryptData(root.content, roomKey);
+    const decoded = await decryptData(root.content, roomKey);
     const data = JSON.parse(decoded) as { t?: string; s?: number; o?: string };
     roomTitle = data.t?.trim() || "Untitled";
     slotStart = Number(data.s ?? 0);
@@ -161,33 +161,32 @@ export async function subscribeToRoom(blindedRoomId: string, roomKey: string) {
     { closeOnEose: false },
   );
 
-  sub.on("event", (event: NDKEvent) => {
+  sub.on("event", async (event: NDKEvent) => {
     // Avoid processing root event as response
     if (event.id === root.id) return;
 
     const responseTag = event.tags.find((t) => t[0] === "d")?.[1];
     if (!responseTag) return;
 
-    deriveResponseId(event.pubkey, root.id, roomKey).then((expected) => {
-      if (expected !== responseTag) return;
+    const expected = await deriveResponseId(event.pubkey, root.id, roomKey);
+    if (expected !== responseTag) return;
 
-      let name = "Anonymous";
-      let slots = new Set<string>();
+    let name = "Anonymous";
+    let slots = new Set<string>();
 
-      try {
-        const decoded = decryptData(event.content, roomKey);
-        const data = JSON.parse(decoded) as { n?: string; o?: string };
-        name = data.n?.trim() || "Anonymous";
-        slots = new Set(decodeSlotMask(slotStart, data.o ?? ""));
-      } catch {
-        name = "Decryption Error";
-      }
+    try {
+      const decoded = await decryptData(event.content, roomKey);
+      const data = JSON.parse(decoded) as { n?: string; o?: string };
+      name = data.n?.trim() || "Anonymous";
+      slots = new Set(decodeSlotMask(slotStart, data.o ?? ""));
+    } catch {
+      name = "Decryption Error";
+    }
 
-      upsertResponse(event.pubkey, {
-        slots,
-        name,
-        timestamp: event.created_at ?? 0,
-      });
+    upsertResponse(event.pubkey, {
+      slots,
+      name,
+      timestamp: event.created_at ?? 0,
     });
   });
 

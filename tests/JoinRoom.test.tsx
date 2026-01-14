@@ -17,8 +17,8 @@ import {
 mock.module("../src/utils/crypto", () => ({
   getOrCreateRoomKey: () => "mock-key",
   deriveBlindedId: async (id: string) => `blinded-${id}`,
-  decryptData: (text: string) => text,
-  encryptData: (text: string) => text,
+  decryptData: async (text: string) => text,
+  encryptData: async (text: string) => text,
 }));
 
 afterEach(() => {

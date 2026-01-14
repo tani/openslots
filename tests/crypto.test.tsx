@@ -79,19 +79,19 @@ describe("Crypto Utils (Ultimate Privacy)", () => {
     expect(responseId).toBe(expected);
   });
 
-  test("encryptData and decryptData roundtrip (NIP-44)", () => {
+  test("encryptData and decryptData roundtrip (NIP-44)", async () => {
     const roomKey = getOrCreateRoomKey();
     const secretMessage = JSON.stringify({
       title: "Top Secret Meeting",
       options: ["123", "456"],
     });
 
-    const ciphertext = encryptData(secretMessage, roomKey);
+    const ciphertext = await encryptData(secretMessage, roomKey);
     expect(ciphertext).not.toBe(secretMessage);
     // NIP-44 v2 produces base64 ciphertext usually
     expect(ciphertext.length).toBeGreaterThan(0);
 
-    const decrypted = decryptData(ciphertext, roomKey);
+    const decrypted = await decryptData(ciphertext, roomKey);
     expect(decrypted).toBe(secretMessage);
   });
 });
