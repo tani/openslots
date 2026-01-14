@@ -18,7 +18,7 @@ export function getRelays(): string[] {
   if (typeof window === "undefined" || !window.localStorage) {
     return DEFAULT_RELAYS;
   }
-  const saved = window.localStorage.getItem("when2nostr_relays");
+  const saved = window.localStorage.getItem("openslots_relays");
   if (saved) {
     try {
       return JSON.parse(saved);
@@ -30,14 +30,14 @@ export function getRelays(): string[] {
 }
 
 export function setRelays(relays: string[]) {
-  window.localStorage.setItem("when2nostr_relays", JSON.stringify(relays));
+  window.localStorage.setItem("openslots_relays", JSON.stringify(relays));
   _resetNDK();
 }
 
 let ndkInstance: NDK | null = null;
 
 function getStorageKey(): string {
-  return "when2nostr_private_key";
+  return "openslots_private_key";
 }
 
 async function getSigner() {

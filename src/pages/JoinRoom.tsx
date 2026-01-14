@@ -62,12 +62,12 @@ export function JoinRoom(props: { id?: string }) {
 
   const status = useSignal<"loading" | "ready" | "missing">("loading");
   const name = useSignal(
-    localStorage.getItem("when2nostr_user_name") ?? "Anonymous",
+    localStorage.getItem("openslots_user_name") ?? "Anonymous",
   );
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   useSignalEffect(() => {
-    localStorage.setItem("when2nostr_user_name", name.value);
+    localStorage.setItem("openslots_user_name", name.value);
   });
 
   useSignalEffect(() => {

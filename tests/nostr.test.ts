@@ -87,7 +87,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
   });
 
   it("returns defaults when relays storage is invalid", () => {
-    window.localStorage.setItem("when2nostr_relays", "not-json");
+    window.localStorage.setItem("openslots_relays", "not-json");
     expect(getRelays()).toEqual([
       "wss://nos.lol",
       "wss://relay.damus.io",
@@ -97,7 +97,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
 
   it("stores relays in localStorage", () => {
     setRelays(["wss://example.com"]);
-    expect(window.localStorage.getItem("when2nostr_relays")).toBe(
+    expect(window.localStorage.getItem("openslots_relays")).toBe(
       JSON.stringify(["wss://example.com"]),
     );
     expect(getRelays()).toEqual(["wss://example.com"]);
@@ -126,7 +126,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
   });
 
   it("uses stored private key when available", async () => {
-    window.localStorage.setItem("when2nostr_private_key", "nsec-test");
+    window.localStorage.setItem("openslots_private_key", "nsec-test");
     const pubkey = await getMyPubkey();
     expect(pubkey).toBe("mock-pubkey");
   });

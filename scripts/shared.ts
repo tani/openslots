@@ -8,7 +8,7 @@ const html = `<!doctype html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>When2Nostr</title>
+    <title>OpenSlots: A Trustless, Privacy-Preserving Scheduling Protocol over Nostr</title>
     <link rel="stylesheet" href="/index.css" />
   </head>
   <body>
@@ -24,7 +24,7 @@ async function writeStaticAssets() {
   ).text();
 
   const customCss = `
-    /* Custom styles for When2Nostr */
+    /* Custom styles for OpenSlots */
     :root {
       --ink: #11120f;
       --paper: #f5f1ea;

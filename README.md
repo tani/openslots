@@ -1,8 +1,8 @@
-# When2Nostr: A Trustless, Decentralized Protocol for Privacy-Preserving Team Scheduling
+# OpenSlots: A Trustless, Privacy-Preserving Scheduling Protocol over Nostr
 
 ## Abstract
 
-Centralized scheduling services provide usability at the cost of extensive metadata exposure, including social-graph inference (who meets whom), temporal patterns (when), and contextual cues (often why). This paper presents **When2Nostr**, a zero-knowledge scheduling application implemented as a browser-based thick client atop the **Nostr** relay network. When2Nostr decouples application logic from storage by publishing encrypted, replaceable events to untrusted relays while distributing decryption capability exclusively via URL fragments. The design integrates (i) client-side key generation and end-to-end encryption using **NIP-44** (ChaCha20-Poly1305), (ii) *blinded indexing* via **HMAC-SHA256** to mitigate relay-side observability of room identifiers, and (iii) compact availability encoding via bitmask compression to respect relay payload constraints. We formalize the adversary model, analyze confidentiality and metadata leakage, and discuss operational trade-offs and limitations. The resulting system provides a censorship-resistant and trust-minimized alternative to centralized platforms such as Doodle or Calendly.
+Centralized scheduling services provide usability at the cost of extensive metadata exposure, including social-graph inference (who meets whom), temporal patterns (when), and contextual cues (often why). This paper presents **OpenSlots**, a zero-knowledge scheduling application implemented as a browser-based thick client atop the **Nostr** relay network. OpenSlots decouples application logic from storage by publishing encrypted, replaceable events to untrusted relays while distributing decryption capability exclusively via URL fragments. The design integrates (i) client-side key generation and end-to-end encryption using **NIP-44** (ChaCha20-Poly1305), (ii) *blinded indexing* via **HMAC-SHA256** to mitigate relay-side observability of room identifiers, and (iii) compact availability encoding via bitmask compression to respect relay payload constraints. We formalize the adversary model, analyze confidentiality and metadata leakage, and discuss operational trade-offs and limitations. The resulting system provides a censorship-resistant and trust-minimized alternative to centralized platforms such as Doodle or Calendly.
 
 **Keywords:** decentralized scheduling, Nostr, end-to-end encryption, metadata privacy, blinded indexing, zero-knowledge applications
 
@@ -12,7 +12,7 @@ Centralized scheduling services provide usability at the cost of extensive metad
 
 Scheduling across time zones remains a recurrent coordination bottleneck for distributed teams. Widely deployed solutions implement a server-centric architecture in which a provider stores meeting identifiers, availability responses, and participant identifiers. While the meeting content may appear benign, the associated metadata forms a high-value *inference surface*: access logs and database records enable reconstruction of organizational rhythms, cross-group interactions, and sensitivity of projects.
 
-The present work advances the thesis that scheduling can be modeled as a **protocol interaction** rather than a **hosted service**. In this framing, the network acts as a content-addressed or tag-indexed substrate, while confidentiality and integrity are enforced at the endpoints. **When2Nostr** operationalizes this thesis by using the Nostr relay ecosystem as an untrusted transport and persistence layer, with all cryptographic and application state maintained in the browser.
+The present work advances the thesis that scheduling can be modeled as a **protocol interaction** rather than a **hosted service**. In this framing, the network acts as a content-addressed or tag-indexed substrate, while confidentiality and integrity are enforced at the endpoints. **OpenSlots** operationalizes this thesis by using the Nostr relay ecosystem as an untrusted transport and persistence layer, with all cryptographic and application state maintained in the browser.
 
 ### 1.1 Problem Statement
 
@@ -37,17 +37,17 @@ This article makes three main contributions:
 
 ### 2.1 Nostr as a Relay Substrate
 
-Nostr ("Notes and Other Stuff Transmitted by Relays") specifies a simple event model in which clients publish signed events to relays and fetch events via filters. Relays are not assumed to be trustworthy; rather, they implement minimal functionality (store, forward, filter). This architecture aligns with the When2Nostr requirement that storage providers be replaceable and non-authoritative.
+Nostr ("Notes and Other Stuff Transmitted by Relays") specifies a simple event model in which clients publish signed events to relays and fetch events via filters. Relays are not assumed to be trustworthy; rather, they implement minimal functionality (store, forward, filter). This architecture aligns with the OpenSlots requirement that storage providers be replaceable and non-authoritative.
 
 ### 2.2 Replaceable Events for Collaborative State
 
-When2Nostr represents rooms and responses using **Kind 30030** events (parameterized replaceable events). Replaceability permits a room creator to update meeting parameters and participants to revise availability without generating unbounded event histories, which is beneficial under relay retention policies and client synchronization.
+OpenSlots represents rooms and responses using **Kind 30030** events (parameterized replaceable events). Replaceability permits a room creator to update meeting parameters and participants to revise availability without generating unbounded event histories, which is beneficial under relay retention policies and client synchronization.
 
 ---
 
 ## 3. System Architecture
 
-When2Nostr is implemented as a Single Page Application (SPA) adopting a **thick-client** paradigm. All protocol logic—key generation, encryption/decryption, availability encoding, and UI state transitions—executes in the browser runtime.
+OpenSlots is implemented as a Single Page Application (SPA) adopting a **thick-client** paradigm. All protocol logic—key generation, encryption/decryption, availability encoding, and UI state transitions—executes in the browser runtime.
 
 ### 3.1 Implementation Stack
 
@@ -93,7 +93,7 @@ We explicitly do **not** assume a trusted host, trusted relay, or secure enclave
 ### 4.3 Non-goals and Residual Leakage
 
 * **Traffic analysis resistance:** IP addresses and timing may reveal participation patterns.
-* **Global anonymity:** When2Nostr does not provide network-layer anonymity; users requiring stronger protections should combine it with anonymity networks (e.g., Tor) or relay access via privacy-preserving proxies.
+* **Global anonymity:** OpenSlots does not provide network-layer anonymity; users requiring stronger protections should combine it with anonymity networks (e.g., Tor) or relay access via privacy-preserving proxies.
 
 ---
 
@@ -101,16 +101,16 @@ We explicitly do **not** assume a trusted host, trusted relay, or secure enclave
 
 ### 5.1 Anchor of Trust: URL Fragments
 
-When2Nostr distributes the room’s symmetric key using a URL fragment. Standard browser behavior does not transmit the fragment portion (after `#`) in HTTP requests, enabling key distribution without server disclosure.
+OpenSlots distributes the room’s symmetric key using a URL fragment. Standard browser behavior does not transmit the fragment portion (after `#`) in HTTP requests, enabling key distribution without server disclosure.
 
-* **URL form:** `https://when2nostr.org/room/<UUID>#<Key>`
+* **URL form:** `https://openslots.org/room/<UUID>#<Key>`
 * **Key:** 32-byte random value generated client-side
 
 Under this construction, the static host learns only that the application was loaded; it does not learn the room key and cannot decrypt relay content.
 
 ### 5.2 Blinded Indexing via HMAC-SHA256
 
-A direct use of the room UUID as an event tag would allow relays to enumerate active rooms and correlate repeated queries. To mitigate this, When2Nostr computes a blinded identifier:
+A direct use of the room UUID as an event tag would allow relays to enumerate active rooms and correlate repeated queries. To mitigate this, OpenSlots computes a blinded identifier:
 
 $$
 \mathtt{blinded_ID} = \operatorname{HMAC}_{\mathtt{Key}}(\mathtt{RoomUUID})
@@ -144,7 +144,7 @@ Relays may enforce payload-size limits or rate constraints; moreover, larger cip
 
 ### 6.2 Bitmask Construction
 
-When2Nostr encodes availability as a bitmask over a fixed epoch:
+OpenSlots encodes availability as a bitmask over a fixed epoch:
 
 1. Choose an epoch $t_0$ (start time of the first slot).
 2. Define $n$ slots at resolution $\Delta$.
@@ -257,7 +257,7 @@ flowchart TD
 
 ### 8.1 Privacy Properties and Limitations
 
-When2Nostr achieves content confidentiality against relays and passive observers lacking the key. However, several leakage channels remain:
+OpenSlots achieves content confidentiality against relays and passive observers lacking the key. However, several leakage channels remain:
 
 * **Network identifiers:** Relays can associate queries with IP addresses.
 * **Timing correlations:** Publication and retrieval times can reveal participation windows.
@@ -277,7 +277,7 @@ The URL-fragment key distribution yields strong minimization of server knowledge
 
 ## 9. Conclusion
 
-When2Nostr demonstrates that practical scheduling can be achieved without a trusted central service provider by treating scheduling as an encrypted protocol executed at the endpoints and persisted on untrusted relays. By combining client-side key generation, NIP-44 authenticated encryption, blinded indexing via HMAC, and efficient bitmask encoding, the system provides a trust-minimized and censorship-resistant alternative to conventional scheduling platforms.
+OpenSlots demonstrates that practical scheduling can be achieved without a trusted central service provider by treating scheduling as an encrypted protocol executed at the endpoints and persisted on untrusted relays. By combining client-side key generation, NIP-44 authenticated encryption, blinded indexing via HMAC, and efficient bitmask encoding, the system provides a trust-minimized and censorship-resistant alternative to conventional scheduling platforms.
 
 Future work includes formal verification of key-derivation and nonce-handling logic, stronger access-control options beyond bearer-URL semantics, and systematic evaluation of metadata leakage under realistic network adversaries.
 

@@ -77,7 +77,7 @@ describe("RelaySettings", () => {
     await fireEvent.click(screen.getByText("Reset Relays to Default"));
 
     expect(confirmMock).toHaveBeenCalled();
-    expect(localStorage.getItem("when2nostr_relays")).toBeNull();
+    expect(localStorage.getItem("openslots_relays")).toBeNull();
     expect(reloadMock).toHaveBeenCalled();
   });
 });

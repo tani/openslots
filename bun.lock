@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "when2nostr",
+      "name": "openslots",
       "dependencies": {
         "@js-temporal/polyfill": "^0.4.4",
         "@nostr-dev-kit/ndk": "^2.8.2",

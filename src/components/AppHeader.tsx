@@ -9,7 +9,7 @@ export function AppHeader() {
     <header class="navbar navbar-light bg-primary border-bottom">
       <div class="container">
         <a class="navbar-brand fw-bold" href="/">
-          When2Nostr
+          OpenSlots
         </a>
         <button
           type="button"

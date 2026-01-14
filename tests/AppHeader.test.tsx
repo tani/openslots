@@ -10,7 +10,7 @@ afterEach(() => {
 test("AppHeader renders brand and toggles offcanvas", async () => {
   render(<AppHeader />);
 
-  expect(screen.getByText("When2Nostr")).toBeTruthy();
+  expect(screen.getByText("OpenSlots")).toBeTruthy();
 
   const toggler = screen.getByLabelText("Toggle settings");
   const panel = screen.getByRole("dialog", { hidden: true });

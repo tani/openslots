@@ -75,7 +75,7 @@ export function RelaySettings() {
           class="btn btn-outline-secondary btn-sm"
           onClick={() => {
             if (confirm("Reset relays to default?")) {
-              localStorage.removeItem("when2nostr_relays");
+              localStorage.removeItem("openslots_relays");
               location.reload();
             }
           }}
