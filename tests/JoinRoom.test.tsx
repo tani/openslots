@@ -11,8 +11,8 @@ import {
   responses,
   upsertResponse,
 } from "../src/signals/store";
-import * as nostrUtils from "../src/utils/nostr";
 import * as cryptoUtils from "../src/utils/crypto";
+import * as nostrUtils from "../src/utils/nostr";
 
 afterEach(() => {
   cleanup();

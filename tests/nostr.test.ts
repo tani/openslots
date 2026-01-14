@@ -37,8 +37,8 @@ mock.module("@nostr-dev-kit/ndk", () => {
   };
 });
 
-import * as cryptoUtils from "../src/utils/crypto";
 import * as store from "../src/signals/store";
+import * as cryptoUtils from "../src/utils/crypto";
 
 // Import local code
 import {
