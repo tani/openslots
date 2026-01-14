@@ -112,9 +112,9 @@ Under this construction, the static host learns only that the application was lo
 
 A direct use of the room UUID as an event tag would allow relays to enumerate active rooms and correlate repeated queries. To mitigate this, When2Nostr computes a blinded identifier:
 
-[
-\texttt{blinded_ID} = \operatorname{HMAC}_{\texttt{Key}}(\texttt{RoomUUID})
-]
+$$
+\mathtt{blinded_ID} = \operatorname{HMAC}_{\mathtt{Key}}(\mathtt{RoomUUID})
+$$
 
 Relays index and filter by `blinded_ID` rather than the UUID. Without the key, a relay cannot feasibly map `blinded_ID` back to the original UUID. This reduces *passive* observability of room identifiers, although it does not eliminate *active* correlation attacks if an adversary obtains the room URL.
 
@@ -128,9 +128,9 @@ Security is therefore reduced to the confidentiality and integrity properties of
 
 Using a single key for both HMAC and encryption is convenient but introduces conceptual coupling. A more conservative alternative is to derive independent subkeys using a KDF:
 
-[
+$$
 K_{\text{enc}}, K_{\text{hmac}} = \operatorname{HKDF}(K_{\text{room}}, \text{context})
-]
+$$
 
 While the current design remains practical, adopting explicit key separation would better align with cryptographic best practices and simplify security proofs.
 
@@ -140,15 +140,15 @@ While the current design remains practical, adopting explicit key separation wou
 
 ### 6.1 Motivation
 
-Relays may enforce payload-size limits or rate constraints; moreover, larger ciphertexts increase latency and client-side computation. Representing availability as a list of timestamps is inefficient: for a meeting horizon of (D) days with (\Delta)-minute resolution, the number of slots scales as (O(D \cdot 24 \cdot 60 / \Delta)).
+Relays may enforce payload-size limits or rate constraints; moreover, larger ciphertexts increase latency and client-side computation. Representing availability as a list of timestamps is inefficient: for a meeting horizon of $D$ days with $\Delta$-minute resolution, the number of slots scales as $O(D \cdot 24 \cdot 60 / \Delta)$.
 
 ### 6.2 Bitmask Construction
 
 When2Nostr encodes availability as a bitmask over a fixed epoch:
 
-1. Choose an epoch (t_0) (start time of the first slot).
-2. Define (n) slots at resolution (\Delta).
-3. Construct a binary string (b \in {0,1}^n) where (b_i = 1) denotes "available" for slot (i).
+1. Choose an epoch $t_0$ (start time of the first slot).
+2. Define $n$ slots at resolution $\Delta$.
+3. Construct a binary string $b \in \{0,1\}^n$ where $b_i = 1$ denotes "available" for slot $i$.
 
 A compact JSON representation is then:
 
@@ -159,17 +159,17 @@ A compact JSON representation is then:
 }
 ```
 
-The storage benefit is substantial: a bitmask requires (n) bits (plus encoding overhead), whereas timestamps require (O(n)) integers. For typical schedules, this reduces payload size by an order of magnitude, improving both bandwidth consumption and cryptographic processing time.
+The storage benefit is substantial: a bitmask requires $n$ bits (plus encoding overhead), whereas timestamps require $O(n)$ integers. For typical schedules, this reduces payload size by an order of magnitude, improving both bandwidth consumption and cryptographic processing time.
 
 ### 6.3 Aggregation Semantics
 
-Given (m) participants with bitmasks (b^{(1)},\dots,b^{(m)}), the per-slot availability count is:
+Given $m$ participants with bitmasks $b^{(1)},\dots,b^{(m)}$, the per-slot availability count is:
 
-[
+$$
 c_i = \sum_{j=1}^{m} b^{(j)}_i.
-]
+$$
 
-Clients can compute (c_i) locally after decryption, enabling privacy-preserving aggregation without revealing individual responses to relays.
+Clients can compute $c_i$ locally after decryption, enabling privacy-preserving aggregation without revealing individual responses to relays.
 
 ---
 
