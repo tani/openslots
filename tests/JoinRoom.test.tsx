@@ -22,13 +22,15 @@ type SubscribeReturn = Awaited<ReturnType<typeof nostrUtils.subscribeToRoom>>;
 spyOn(nostrUtils, "subscribeToRoom").mockResolvedValue({
   root: {
     id: "root-1",
-    content: JSON.stringify({
-      title: "Test Room",
-      options: ["1736773200"], // Example epoch
-    }),
     tags: [],
   },
   sub: { stop: mock(() => {}) },
+  room: {
+    title: "Test Room",
+    slots: ["1736773200"],
+    slotStart: 1736773200,
+    slotMask: "1",
+  },
 } as unknown as SubscribeReturn);
 
 spyOn(nostrUtils, "publishResponse").mockResolvedValue(

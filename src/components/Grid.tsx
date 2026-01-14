@@ -11,7 +11,6 @@ export function Grid(props: {
   dates: string[];
   times: string[];
   slotByLocalKey: Map<string, string>;
-  blindedSlotMap: Map<string, string>;
 }) {
   const dragging = useSignal(false);
   const dragMode = useSignal<"add" | "remove">("add");
@@ -97,13 +96,10 @@ export function Grid(props: {
                   );
                 }
 
-                const blindedId = props.blindedSlotMap.get(slotId) ?? slotId;
-
                 return (
                   <Slot
                     key={slotId}
                     slotId={slotId}
-                    blindedId={blindedId}
                     rowShade={rowShade}
                     heatmap={heatmap}
                     participantCount={participantCount}

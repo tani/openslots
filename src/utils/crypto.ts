@@ -54,6 +54,14 @@ export async function deriveBlindedId(
     .join("");
 }
 
+export async function deriveResponseId(
+  pubkey: string,
+  roomEventId: string,
+  roomKey: string,
+): Promise<string> {
+  return deriveBlindedId(`${pubkey}:${roomEventId}`, roomKey);
+}
+
 /**
  * Encrypts data using NIP-44 (uses roomKey as a symmetric key).
  */

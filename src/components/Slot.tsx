@@ -2,7 +2,6 @@ import { type ReadonlySignal, type Signal, useComputed } from "@preact/signals";
 
 export function Slot(props: {
   slotId: string;
-  blindedId: string;
   rowShade?: boolean;
   heatmap: ReadonlySignal<Map<string, number>>;
   participantCount: ReadonlySignal<number>;
@@ -11,7 +10,7 @@ export function Slot(props: {
   onMouseEnter: (id: string) => void;
 }) {
   const count = useComputed(
-    () => props.heatmap.value.get(props.blindedId) ?? 0,
+    () => props.heatmap.value.get(props.slotId) ?? 0,
   );
   const selected = useComputed(() =>
     props.currentSelections.value.has(props.slotId),

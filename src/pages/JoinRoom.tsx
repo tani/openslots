@@ -11,11 +11,7 @@ import {
   responses,
   setSelections,
 } from "../signals/store";
-import {
-  decryptData,
-  deriveBlindedId,
-  getOrCreateRoomKey,
-} from "../utils/crypto";
+import { deriveBlindedId, getOrCreateRoomKey } from "../utils/crypto";
 import { getMyPubkey, publishResponse, subscribeToRoom } from "../utils/nostr";
 import { toLocalDate, toLocalDisplay } from "../utils/temporal";
 
@@ -51,12 +47,18 @@ export function JoinRoom(props: { id?: string }) {
   const roomResource = useSignal<{
     root: NDKEvent;
     sub: NDKSubscription;
+    room: {
+      title: string;
+      slots: string[];
+      slotStart: number;
+      slotMask: string;
+    };
   } | null>(null);
 
-  // New signals for decrypted/derived data
-  const decryptedTitle = useSignal("");
-  const decryptedOptions = useSignal<string[]>([]);
-  const blindedSlotMap = useSignal(new Map<string, string>());
+  const roomTitle = useSignal("");
+  const roomSlots = useSignal<string[]>([]);
+  const slotStart = useSignal(0);
+  const slotMask = useSignal("");
 
   const status = useSignal<"loading" | "ready" | "missing">("loading");
   const name = useSignal(
@@ -82,9 +84,10 @@ export function JoinRoom(props: { id?: string }) {
     clearResponses();
     setSelections(new Set());
     roomResource.value = null;
-    decryptedTitle.value = "";
-    decryptedOptions.value = [];
-    blindedSlotMap.value = new Map();
+    roomTitle.value = "";
+    roomSlots.value = [];
+    slotStart.value = 0;
+    slotMask.value = "";
 
     if (!rawId) {
       status.value = "missing";
@@ -105,28 +108,10 @@ export function JoinRoom(props: { id?: string }) {
         return;
       }
 
-      // Decrypt Content
-      try {
-        const content = decryptData(result.root.content, roomKey);
-        const data = JSON.parse(content);
-        decryptedTitle.value = data.title || "Untitled";
-        decryptedOptions.value = data.options || [];
-
-        // Compute Blinded IDs for all options (for heatmap matching)
-        const map = new Map<string, string>();
-        await Promise.all(
-          data.options.map(async (opt: string) => {
-            const b = await deriveBlindedId(opt, roomKey);
-            map.set(opt, b);
-          }),
-        );
-        blindedSlotMap.value = map;
-      } catch (e) {
-        console.error("Failed to decrypt room:", e);
-        status.value = "missing";
-        return;
-      }
-
+      roomTitle.value = result.room.title;
+      roomSlots.value = result.room.slots;
+      slotStart.value = result.room.slotStart;
+      slotMask.value = result.room.slotMask;
       roomResource.value = result;
       activeSub = result.sub;
       status.value = "ready";
@@ -139,11 +124,11 @@ export function JoinRoom(props: { id?: string }) {
   const title = useComputed(() => {
     if (status.value === "loading") return "Syncing...";
     if (status.value === "missing") return "Room not found";
-    return decryptedTitle.value;
+    return roomTitle.value;
   });
 
   // Use stored decrypted options
-  const grid = useComputed(() => buildGrid(decryptedOptions.value, tz));
+  const grid = useComputed(() => buildGrid(roomSlots.value, tz));
 
   const selectedCount = useComputed(() => currentSelections.value.size);
   const participantList = useComputed(() =>
@@ -164,8 +149,10 @@ export function JoinRoom(props: { id?: string }) {
     await publishResponse({
       rootId: rootId.value,
       name: name.value,
-      slots: Array.from(currentSelections.value),
+      slots: new Set(currentSelections.value),
       roomKey,
+      slotStart: slotStart.value,
+      slotCount: slotMask.value.length,
     });
   };
 
@@ -199,12 +186,11 @@ export function JoinRoom(props: { id?: string }) {
         ) : (
           <div class="row g-4">
             <div class="col-lg-9">
-              <Grid
-                dates={grid.value.dateList}
-                times={grid.value.timeList}
-                slotByLocalKey={grid.value.slotByLocalKey}
-                blindedSlotMap={blindedSlotMap.value}
-              />
+            <Grid
+              dates={grid.value.dateList}
+              times={grid.value.timeList}
+              slotByLocalKey={grid.value.slotByLocalKey}
+            />
             </div>
             <div class="col-lg-3">
               <Sidebar title="Your response">

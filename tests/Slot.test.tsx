@@ -18,7 +18,6 @@ test("Slot handles mouse events", () => {
   render(
     <Slot
       slotId="slot-1"
-      blindedId="blinded-slot-1"
       heatmap={heatmap}
       participantCount={participantCount}
       currentSelections={currentSelections}
@@ -41,7 +40,6 @@ test("Slot background changes based on selection", () => {
   render(
     <Slot
       slotId="slot-1"
-      blindedId="blinded-slot-1"
       heatmap={heatmap}
       participantCount={participantCount}
       currentSelections={currentSelections}

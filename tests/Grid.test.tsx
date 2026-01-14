@@ -15,14 +15,8 @@ test("Grid renders dates and times", () => {
     ["2026-01-14|10:00", "slot-2"],
   ]);
 
-  const blindedSlotMap = new Map();
   render(
-    <Grid
-      dates={dates}
-      times={times}
-      slotByLocalKey={slotByLocalKey}
-      blindedSlotMap={blindedSlotMap}
-    />,
+    <Grid dates={dates} times={times} slotByLocalKey={slotByLocalKey} />,
   );
 
   expect(screen.getByText("2026-01-13")).toBeTruthy();

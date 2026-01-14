@@ -15,28 +15,31 @@ published and decrypted locally on read.
 
 ## Data Model (Nostr Events)
 
-Both room and response events use Kind 10001.
+Both room and response events use Kind 30030 (Parameterized Replaceable).
 
 ### Room Event
 
-- Kind: 10001
+- Kind: 30030
 - Tags:
-  - ["d", <blinded_room_id>]
+  - ["d", <HMAC(roomKey, roomUUID)>]
 - Content:
-  - Encrypted JSON via NIP-44: `{ title, options }`
-  - `options` is an array of Unix epoch seconds (30-minute slots)
+  - Encrypted JSON via NIP-44: `{ t, s, o }`
+  - `t`: title, `s`: start epoch seconds, `o`: bitstring of 30-minute slots
 
 ### Response Event
 
-- Kind: 10001
+- Kind: 30030
 - Tags:
   - ["e", <room_event_id>]
-  - ["r", <blinded_slot_id_1>, <blinded_slot_id_2>, ...]
-  - ["name", <encrypted_name>]
-- Content: empty string
+  - ["d", <HMAC(roomKey, pubkey:room_event_id)>]
+- Content:
+  - Encrypted JSON via NIP-44: `{ n, o }`
+  - `n`: name, `o`: bitstring of selected slots
 
 Blinding is done with HMAC-SHA256 using the room key so relay observers
 cannot infer the room id or selected slots from tags alone.
+Response `d` tags are deterministic per user+room, so each user has a single
+replaceable response.
 
 ## Core Workflows
 
@@ -44,17 +47,17 @@ cannot infer the room id or selected slots from tags alone.
 
 - User sets title/date/time/timezone.
 - `generateSlots` builds 30-minute slots in the creator timezone and stores
-  them as epoch seconds.
+  them as epoch seconds, then compresses them into `{ s, o }`.
 - A random UUID and room key are generated.
-- `publishRoom` encrypts `{ title, options }` with NIP-44 and publishes Kind 10001.
+- `publishRoom` encrypts `{ t, s, o }` with NIP-44 and publishes Kind 30030.
 - User is routed to `/room/<UUID>#<roomKey>`.
 
 ### 2) Room Sync (JoinRoom)
 
 - Reads the room key from the URL fragment.
 - Blinds the room id and fetches the root event.
-- Decrypts the content JSON into `title` and `options`.
-- Builds a grid by converting epoch seconds into local date/time buckets.
+- Decrypts the content JSON into `t`, `s`, `o` and decodes the slot mask.
+- Builds a grid by converting decoded epoch seconds into local date/time buckets.
 - Subscribes to responses (`#e` tag referencing the room event).
 
 ### 3) State + Heatmap (signals/store)
