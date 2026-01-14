@@ -286,8 +286,43 @@ Future work includes formal verification of key-derivation and nonce-handling lo
 
 ---
 
-## Appendix A. Implementation Notes (Non-normative)
+## Appendix A. Developer Considerations
 
-* Correct timezone handling should be defined with explicit Temporal objects and stable serialization formats.
-* Bitmask encoding benefits from base64 or run-length encoding if human readability of the JSON is unnecessary.
-* Key separation via HKDF is recommended to reduce cross-protocol risk.
+While the core protocol is defined above, the following implementation details are critical for contributors and anyone forking this codebase:
+
+* **Time Zone Serialization:** JavaScript's `Date` object is notoriously flaky with time zones. We rely strictly on the **Temporal API** (using a polyfill where necessary) to ensure that slot definitions remain stable across DST transitions.
+* **JSON Readability vs. Size:** The bitmask encoding is designed for compactness. While Base64 encoding would save more space, we currently stick to a binary string in JSON for easier debugging during the alpha phase. Future versions may optimize this further.
+* **Key Derivation Best Practices:** Currently, the Room Key is used directly for both encryption and HMAC. To align with strict cryptographic hygiene, future PRs should implement **HKDF** (HMAC-based Key Derivation Function) to derive separate sub-keys for `encryption` and `indexing` contexts.
+
+---
+
+## Appendix B. Landscape and Alternatives
+
+OpenSlots sits at the intersection of user-friendly scheduling and paranoid-level privacy. Here is how it compares to existing solutions and why a new protocol was necessary.
+
+### 1. Traditional & Self-Hosted (Web 2.0 / 2.5)
+
+Tools like **Doodle**, **Calendly**, or even self-hosted options like **Cal.com** and **Rallly** offer excellent UX but fundamentally different security models.
+
+* **The Gap:** Even when self-hosting, the server administrator technically possesses the keys to the kingdom (plaintext database access). OpenSlots is designed for scenarios where *no* server administrator can be trusted, not even yourself.
+
+### 2. The Nostr Ecosystem
+
+Why not just use existing Nostr standards?
+
+* **NIP-52 (Calendar Events):** This NIP is excellent for *public* events (concerts, webinars) or public availability. OpenSlots targets *private* coordination where the very existence of the meeting should be obfuscated from the public relay network.
+* **NIP-17 & Gift Wrap:** While we could wrap invitations in NIP-59 (Gift Wraps) for privacy, OpenSlots focuses on the *state* of the schedule (the grid), which needs to be updated by multiple parties asynchronously without the overhead of direct messaging protocols.
+
+### 3. Advanced Privacy Tech (ZKP & MPC)
+
+There is significant academic work in **Private Set Intersection (PSI)** and **Secure Multi-Party Computation (SMPC)** to mathematically prove time-slot overlaps without revealing schedules.
+
+* **The Trade-off:** These solutions often require heavy computation or constant online presence. OpenSlots chooses a pragmatic middle ground: "Thick Client" encryption. It offers 95% of the privacy benefits of SMPC with 100% of the usability of a standard web app.
+
+### 4. Summary of Architecture
+
+| Model | Storage | Privacy | Trust Anchor |
+| --- | --- | --- | --- |
+| **SaaS (Calendly)** | Central DB | Policy-based | The Company |
+| **Self-Hosted (Cal.com)** | Your DB | Access Control | The Admin |
+| **OpenSlots** | Public Relays | **End-to-End Encrypted** | **The URL / Client** |
