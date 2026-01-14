@@ -47,3 +47,27 @@ test("CreateRoom renders form and creates room with key", async () => {
   expect(callArgs.roomKey).toBeDefined();
   expect(callArgs.roomKey.length).toBe(64); // 32 bytes hex
 });
+
+test("CreateRoom updates inputs and handles invalid time", () => {
+  render(<CreateRoom />);
+
+  const startDate = screen.getByLabelText(/Start date/i);
+  fireEvent.input(startDate, { target: { value: "2024-02-01" } });
+
+  const days = screen.getByLabelText(/Days/i);
+  fireEvent.input(days, { target: { value: "2" } });
+
+  const startTime = screen.getByLabelText(/Start time/i);
+  fireEvent.input(startTime, { target: { value: "invalid" } });
+
+  const endTime = screen.getByLabelText(/End time/i);
+  fireEvent.input(endTime, { target: { value: "08:00" } });
+
+  const tzSelect = screen.getByLabelText(/Timezone/i) as HTMLSelectElement;
+  const optionValue = tzSelect.options[0]?.value;
+  if (optionValue) {
+    fireEvent.change(tzSelect, { target: { value: optionValue } });
+  }
+
+  expect(screen.getByText(/0 time slots/i)).toBeTruthy();
+});

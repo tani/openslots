@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import {
   clearResponses,
+  currentSelections,
   heatmap,
   participantCount,
   responses,
+  setSelections,
+  updateSelection,
   upsertResponse,
 } from "../src/signals/store";
 
@@ -36,5 +39,12 @@ describe("store signals", () => {
     expect(Array.from(responses.value.get("pubkey-1")?.slots ?? [])).toEqual([
       "c",
     ]);
+  });
+
+  it("updates selections when toggling slots", () => {
+    setSelections(new Set(["a"]));
+    updateSelection("b", true);
+    updateSelection("a", false);
+    expect(Array.from(currentSelections.value)).toEqual(["b"]);
   });
 });

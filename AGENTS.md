@@ -4,11 +4,12 @@
 
 - `src/` holds application code.
   - `src/pages/` contains route-level screens (`CreateRoom`, `JoinRoom`).
-  - `src/components/` houses UI primitives like `Grid`, `Slot`, `Header`, `Sidebar`.
+  - `src/components/` houses UI primitives like `Grid`, `Slot`, `AppHeader`, `Sidebar`.
   - `src/signals/` keeps global state (`store.ts`).
   - `src/utils/` includes Nostr + Temporal helpers.
 - `tests/` contains Bun tests (e.g., `tests/temporal.test.ts`).
-- `index.ts` is the Bun build/serve entry that generates `dist/`.
+- `scripts/serve.ts` runs dev build + watch + SPA server.
+- `scripts/build.ts` runs production build to `dist/`.
 - `uno.config.ts` configures UnoCSS.
 
 ## Build, Test, and Development Commands
@@ -16,6 +17,7 @@
 - `bun install` installs dependencies.
 - `bun run dev` builds assets and serves the SPA on `PORT` (default `3000`).
   - Example: `PORT=3001 bun run dev`.
+- `bun run build` builds assets to `dist/`.
 - `bun test` runs unit tests in `tests/`.
 
 ## Coding Style & Naming Conventions
@@ -50,4 +52,6 @@ PRs should include: summary, test status, and screenshots for UI changes.
 ## Configuration Notes
 
 - Nostr relays are configured in `src/utils/nostr.ts`.
-- `index.ts` generates `dist/index.html` and `dist/index.css` during build.
+- Room/response events use Kind 30030 with NIP-44 encrypted payloads.
+- Build output includes `dist/index.html` and `dist/index.css`.
+- `bunfig.toml` enforces 100% coverage thresholds for tests.

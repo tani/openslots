@@ -49,6 +49,19 @@ describe("RelaySettings", () => {
     expect(screen.getByText("wss://new.relay/")).toBeTruthy();
   });
 
+  test("adds a new relay on Enter", async () => {
+    render(<RelaySettings />);
+
+    const input = screen.getByPlaceholderText("wss://...");
+    await fireEvent.input(input, { target: { value: "wss://enter.relay/" } });
+    await fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(setRelaysMock).toHaveBeenCalledWith([
+      "wss://test.relay/",
+      "wss://enter.relay/",
+    ]);
+  });
+
   test("removes a relay", async () => {
     render(<RelaySettings />);
 

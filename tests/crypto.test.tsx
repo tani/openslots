@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import {
   decryptData,
   deriveBlindedId,
+  deriveResponseId,
   encryptData,
   getOrCreateRoomKey,
 } from "../src/utils/crypto";
@@ -64,6 +65,15 @@ describe("Crypto Utils (Ultimate Privacy)", () => {
     const blinded2 = await deriveBlindedId(slotId, key2);
 
     expect(blinded1).not.toEqual(blinded2);
+  });
+
+  test("deriveResponseId matches blinded pubkey-room concatenation", async () => {
+    const roomKey = getOrCreateRoomKey();
+    const pubkey = "pubkey-1";
+    const roomId = "room-1";
+    const responseId = await deriveResponseId(pubkey, roomId, roomKey);
+    const expected = await deriveBlindedId(`${pubkey}:${roomId}`, roomKey);
+    expect(responseId).toBe(expected);
   });
 
   test("encryptData and decryptData roundtrip (NIP-44)", () => {
