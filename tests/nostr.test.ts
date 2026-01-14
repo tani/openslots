@@ -161,7 +161,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
       MOCK_KEY,
     );
 
-    expect(event.kind).toBe(30030);
+    expect(event.kind).toBe(30078);
     expect(event.tags).toContainEqual(["d", blindedId]);
 
     // Should NOT contain plaintext title/options in tags

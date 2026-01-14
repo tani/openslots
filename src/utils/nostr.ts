@@ -87,7 +87,7 @@ export async function publishRoom(input: {
 }) {
   const ndk = await initNDK();
   const event = new NDKEvent(ndk);
-  event.kind = 30030;
+  event.kind = 30078;
 
   const blindedId = await deriveBlindedId(input.roomId, input.roomKey);
   const { start, mask } = buildSlotMask(input.options);
@@ -115,7 +115,7 @@ export async function publishResponse(input: {
 }) {
   const ndk = await initNDK();
   const event = new NDKEvent(ndk);
-  event.kind = 30030;
+  event.kind = 30078;
 
   const pubkey = await getMyPubkey();
   const responseId = await deriveResponseId(
@@ -142,7 +142,7 @@ export async function publishResponse(input: {
 
 export async function subscribeToRoom(blindedRoomId: string, roomKey: string) {
   const ndk = await initNDK();
-  const root = await ndk.fetchEvent({ kinds: [30030], "#d": [blindedRoomId] });
+  const root = await ndk.fetchEvent({ kinds: [30078], "#d": [blindedRoomId] });
   if (!root) return null;
 
   let roomTitle = "Untitled";
@@ -161,7 +161,7 @@ export async function subscribeToRoom(blindedRoomId: string, roomKey: string) {
   }
 
   const sub = ndk.subscribe(
-    { kinds: [30030], "#e": [root.id] },
+    { kinds: [30078], "#e": [root.id] },
     { closeOnEose: false },
   );
 

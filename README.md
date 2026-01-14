@@ -49,7 +49,7 @@ Nostr ("Notes and Other Stuff Transmitted by Relays") specifies a simple event m
 
 ### 2.2 Replaceable Events for Collaborative State
 
-OpenSlots represents rooms and responses using **Kind 30030** events (parameterized replaceable events). Replaceability permits a room creator to update meeting parameters and participants to revise availability without generating unbounded event histories, which is beneficial under relay retention policies and client synchronization.
+OpenSlots represents rooms and responses using **Kind 30078** events (parameterized replaceable events). Replaceability permits a room creator to update meeting parameters and participants to revise availability without generating unbounded event histories, which is beneficial under relay retention policies and client synchronization.
 
 
 ## 3. System Architecture
