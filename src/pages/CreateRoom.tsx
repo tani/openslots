@@ -74,12 +74,12 @@ export function CreateRoom() {
           <div class="col-lg-8">
             <section class="mb-4 text-center">
               <h1 class="display-4 fw-bold text-dark mb-3">
-                Seamless Scheduling for Teams
+                Secure Scheduling Without Accounts
               </h1>
               <p class="lead text-muted">
-                Coordinate availability securely without sign-ups. Create a
-                schedule, share the link, and rely on the decentralized Nostr
-                network to keep your data always valid.
+                OpenSlots runs entirely in your browser. It generates a room key
+                client-side, encrypts the schedule, and publishes only blinded
+                ciphertext to relays. Share the URL fragment to invite others.
               </p>
             </section>
 
@@ -183,7 +183,7 @@ export function CreateRoom() {
               </div>
 
               <div class="form-text text-muted mb-3 fst-italic">
-                Preview: This will generate {totalSlots} time slots.
+                Preview: {totalSlots} slots will be encoded and encrypted.
               </div>
 
               <button
