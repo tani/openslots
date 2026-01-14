@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025-present Masaya Taniguchi
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 // 1. Mock NDK
 mock.module("@nostr-dev-kit/ndk", () => {
@@ -37,23 +37,8 @@ mock.module("@nostr-dev-kit/ndk", () => {
   };
 });
 
-// 2. Mock Crypto
-mock.module("../src/utils/crypto", () => ({
-  deriveBlindedId: async (id: string, _key: string) => `blinded-${id}`,
-  deriveResponseId: async (pubkey: string, roomId: string, _key: string) =>
-    `response-${pubkey}-${roomId}`,
-  encryptData: async (text: string, _key: string) => `encrypted-${text}`,
-  decryptData: async (text: string, _key: string) =>
-    text.replace("encrypted-", ""),
-  getOrCreateRoomKey: () => "mock-key",
-}));
-
-mock.module("../src/signals/store", () => ({
-  upsertResponse: mock(),
-}));
-
-import { upsertResponse } from "../src/signals/store";
-import { decryptData, deriveBlindedId } from "../src/utils/crypto";
+import * as cryptoUtils from "../src/utils/crypto";
+import * as store from "../src/signals/store";
 
 // Import local code
 import {
@@ -75,7 +60,21 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     mock.restore();
     window.localStorage.clear();
     _resetNDK();
-    (upsertResponse as ReturnType<typeof mock>).mockClear();
+    spyOn(store, "upsertResponse").mockImplementation(() => {});
+    spyOn(cryptoUtils, "deriveBlindedId").mockImplementation(
+      async (id: string, _key: string) => `blinded-${id}`,
+    );
+    spyOn(cryptoUtils, "deriveResponseId").mockImplementation(
+      async (pubkey: string, roomId: string, _key: string) =>
+        `response-${pubkey}-${roomId}`,
+    );
+    spyOn(cryptoUtils, "encryptData").mockImplementation(
+      async (text: string, _key: string) => `encrypted-${text}`,
+    );
+    spyOn(cryptoUtils, "decryptData").mockImplementation(
+      async (text: string, _key: string) => text.replace("encrypted-", ""),
+    );
+    spyOn(cryptoUtils, "getOrCreateRoomKey").mockReturnValue("mock-key");
   });
 
   it("should initialize NDK", async () => {
@@ -145,7 +144,10 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
 
     const event = await publishRoom(roomData);
 
-    const blindedId = await deriveBlindedId(roomData.roomId, MOCK_KEY);
+    const blindedId = await cryptoUtils.deriveBlindedId(
+      roomData.roomId,
+      MOCK_KEY,
+    );
 
     expect(event.kind).toBe(30030);
     expect(event.tags).toContainEqual(["d", blindedId]);
@@ -155,7 +157,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     expect(event.tags.some((t) => t[0] === "options")).toBe(false);
 
     // Content should be encrypted
-    const decrypted = await decryptData(event.content, MOCK_KEY);
+    const decrypted = await cryptoUtils.decryptData(event.content, MOCK_KEY);
     const parsed = JSON.parse(decrypted);
     expect(parsed.t).toBe("Secret Sync");
     expect(parsed.s).toBe(1800);
@@ -175,7 +177,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     const event = await publishResponse(responseData);
 
     expect(event.tags).toContainEqual(["e", "root-event-id"]);
-    const decrypted = await decryptData(event.content, MOCK_KEY);
+    const decrypted = await cryptoUtils.decryptData(event.content, MOCK_KEY);
     const parsed = JSON.parse(decrypted);
     expect(parsed.n).toBe("Alice");
     expect(parsed.o).toBe("10");
@@ -216,7 +218,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     });
 
     await Promise.resolve();
-    expect(upsertResponse).not.toHaveBeenCalled();
+    expect(store.upsertResponse).not.toHaveBeenCalled();
   });
 
   it("ignores responses without d tags", async () => {
@@ -254,7 +256,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     });
 
     await Promise.resolve();
-    expect(upsertResponse).not.toHaveBeenCalled();
+    expect(store.upsertResponse).not.toHaveBeenCalled();
   });
 
   it("returns null when room payload cannot be decrypted", async () => {
@@ -315,7 +317,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     });
 
     await Promise.resolve();
-    expect(upsertResponse).toHaveBeenCalledWith("user-1", {
+    expect(store.upsertResponse).toHaveBeenCalledWith("user-1", {
       slots: new Set(["1800"]),
       name: "Alice",
       timestamp: 100,
@@ -357,7 +359,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     });
 
     await Promise.resolve();
-    expect(upsertResponse).toHaveBeenCalledWith("user-2", {
+    expect(store.upsertResponse).toHaveBeenCalledWith("user-2", {
       slots: new Set(),
       name: "Decryption Error",
       timestamp: 200,

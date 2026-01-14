@@ -12,14 +12,7 @@ import {
   upsertResponse,
 } from "../src/signals/store";
 import * as nostrUtils from "../src/utils/nostr";
-
-// Mock crypto
-mock.module("../src/utils/crypto", () => ({
-  getOrCreateRoomKey: () => "mock-key",
-  deriveBlindedId: async (id: string) => `blinded-${id}`,
-  decryptData: async (text: string) => text,
-  encryptData: async (text: string) => text,
-}));
+import * as cryptoUtils from "../src/utils/crypto";
 
 afterEach(() => {
   cleanup();
@@ -30,12 +23,18 @@ type SubscribeReturn = Awaited<ReturnType<typeof nostrUtils.subscribeToRoom>>;
 const subscribeSpy = spyOn(nostrUtils, "subscribeToRoom");
 const publishSpy = spyOn(nostrUtils, "publishResponse");
 spyOn(nostrUtils, "getMyPubkey").mockResolvedValue("my-pubkey");
+const roomKeySpy = spyOn(cryptoUtils, "getOrCreateRoomKey");
+const blindedIdSpy = spyOn(cryptoUtils, "deriveBlindedId");
 
 beforeEach(() => {
   subscribeSpy.mockReset();
   publishSpy.mockReset();
   responses.value = new Map();
   currentSelections.value = new Set();
+  currentUserPubkey.value = null;
+  roomKeySpy.mockReturnValue("mock-key");
+  blindedIdSpy.mockImplementation(async (id: string) => `blinded-${id}`);
+  publishSpy.mockResolvedValue({} as never);
 });
 
 test("JoinRoom shows loading state then content", async () => {
