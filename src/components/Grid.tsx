@@ -77,7 +77,7 @@ export function Grid(props: {
 
         {props.times.map((time, timeIndex) => {
           const rowShade = timeIndex % 2 === 0;
-          const rowShadeClass = rowShade ? " bg-light" : "";
+          const rowShadeClass = rowShade ? " bg-light" : " bg-white";
 
           return (
             <div style={{ display: "contents" }} key={time}>
