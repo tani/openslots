@@ -116,7 +116,7 @@ Under this construction, the static host learns only that the application was lo
 A direct use of the room UUID as an event tag would allow relays to enumerate active rooms and correlate repeated queries. To mitigate this, OpenSlots computes a blinded identifier:
 
 $$
-\mathtt{blinded_ID} = \operatorname{HMAC}_{\mathtt{Key}}(\mathtt{RoomUUID})
+\mathtt{blinded_ID} = \mathrm{HMAC}_{\mathtt{Key}}(\mathtt{RoomUUID})
 $$
 
 Relays index and filter by `blinded_ID` rather than the UUID. Without the key, a relay cannot feasibly map `blinded_ID` back to the original UUID. This reduces *passive* observability of room identifiers, although it does not eliminate *active* correlation attacks if an adversary obtains the room URL.
@@ -132,7 +132,7 @@ Security is therefore reduced to the confidentiality and integrity properties of
 OpenSlots derives independent subkeys using HKDF to avoid coupling HMAC and encryption contexts:
 
 $$
-K_{\text{enc}}, K_{\text{hmac}} = \operatorname{HKDF}(K_{\text{room}}, \text{context})
+K_{\text{enc}}, K_{\text{hmac}} = \mathrm{HKDF}(K_{\text{room}}, \text{context})
 $$
 
 This explicit key separation aligns with cryptographic best practices and simplifies reasoning about security boundaries.
@@ -230,7 +230,7 @@ A complementary view of key usage for indexing and secrecy is given below.
 ```mermaid
 flowchart TD
     subgraph Client [Browser Client]
-        RoomKey[Room Key (from URL #)]
+        RoomKey[Room Key (from URL \#)]
         RoomID[Room UUID]
         Data[Meeting Details]
     end
