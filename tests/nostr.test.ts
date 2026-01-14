@@ -163,6 +163,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
 
     expect(event.kind).toBe(30078);
     expect(event.tags).toContainEqual(["d", blindedId]);
+    expect(event.tags).toContainEqual(["t", "openslots"]);
 
     // Should NOT contain plaintext title/options in tags
     expect(event.tags.some((t) => t[0] === "title")).toBe(false);
@@ -189,6 +190,7 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     const event = await publishResponse(responseData);
 
     expect(event.tags).toContainEqual(["e", "root-event-id"]);
+    expect(event.tags).toContainEqual(["t", "openslots"]);
     const decrypted = await cryptoUtils.decryptData(event.content, MOCK_KEY);
     const parsed = JSON.parse(decrypted);
     expect(parsed.n).toBe("Alice");

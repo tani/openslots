@@ -98,6 +98,7 @@ export async function publishRoom(input: {
 
   event.tags = [
     ["d", blindedId],
+    ["t", "openslots"],
     // title/options hidden
   ];
   event.content = encryptedContent;
@@ -131,6 +132,7 @@ export async function publishResponse(input: {
   event.tags = [
     ["e", input.rootId],
     ["d", responseId],
+    ["t", "openslots"],
   ];
   event.content = await encryptData(
     JSON.stringify({ n: input.name, o: selectionMask }),
@@ -142,7 +144,11 @@ export async function publishResponse(input: {
 
 export async function subscribeToRoom(blindedRoomId: string, roomKey: string) {
   const ndk = await initNDK();
-  const root = await ndk.fetchEvent({ kinds: [30078], "#d": [blindedRoomId] });
+  const root = await ndk.fetchEvent({
+    kinds: [30078],
+    "#d": [blindedRoomId],
+    "#t": ["openslots"],
+  });
   if (!root) return null;
 
   let roomTitle = "Untitled";
@@ -161,7 +167,7 @@ export async function subscribeToRoom(blindedRoomId: string, roomKey: string) {
   }
 
   const sub = ndk.subscribe(
-    { kinds: [30078], "#e": [root.id] },
+    { kinds: [30078], "#e": [root.id], "#t": ["openslots"] },
     { closeOnEose: false },
   );
 
