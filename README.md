@@ -9,7 +9,6 @@ Centralized scheduling services provide usability at the cost of extensive metad
 
 **Keywords:** decentralized scheduling, Nostr, end-to-end encryption, metadata privacy, blinded indexing, zero-knowledge applications
 
----
 
 ## 1. Introduction
 
@@ -34,7 +33,6 @@ This project makes three main contributions:
 * **Security construction:** A client-held symmetric room key distributed via URL fragments, used for both payload encryption (NIP-44) and blinded indexing (HMAC-SHA256).
 * **Efficiency technique:** A bitmask compression scheme for availability that substantially reduces payload size under typical meeting-grid resolutions.
 
----
 
 ## 2. Background and Design Rationale
 
@@ -46,7 +44,6 @@ Nostr ("Notes and Other Stuff Transmitted by Relays") specifies a simple event m
 
 OpenSlots represents rooms and responses using **Kind 30030** events (parameterized replaceable events). Replaceability permits a room creator to update meeting parameters and participants to revise availability without generating unbounded event histories, which is beneficial under relay retention policies and client synchronization.
 
----
 
 ## 3. System Architecture
 
@@ -73,7 +70,6 @@ Only encrypted representations of (1) and (2) are published to relays.
 
 Clients publish and query events using a relay set (e.g., multiple WebSocket endpoints). The use of multiple relays provides redundancy against outages and selective censorship. Because relays are untrusted and potentially adversarial, the protocol minimizes what relays can learn from stored content and indexing tags.
 
----
 
 ## 4. Threat Model and Security Goals
 
@@ -98,7 +94,6 @@ We explicitly do **not** assume a trusted host, trusted relay, or secure enclave
 * **Traffic analysis resistance:** IP addresses and timing may reveal participation patterns.
 * **Global anonymity:** OpenSlots does not provide network-layer anonymity; users requiring stronger protections should combine it with anonymity networks (e.g., Tor) or relay access via privacy-preserving proxies.
 
----
 
 ## 5. Cryptographic Design
 
@@ -137,7 +132,6 @@ $$
 
 This explicit key separation aligns with cryptographic best practices and simplifies reasoning about security boundaries.
 
----
 
 ## 6. Efficient Encoding of Availability
 
@@ -174,7 +168,6 @@ $$
 
 Clients can compute $c_i$ locally after decryption, enabling privacy-preserving aggregation without revealing individual responses to relays.
 
----
 
 ## 7. Protocol Walkthrough
 
@@ -254,7 +247,6 @@ flowchart TD
     NIP44 --> Payload
 ```
 
----
 
 ## 8. Discussion
 
@@ -276,7 +268,6 @@ Using multiple relays improves availability but introduces consistency concerns 
 
 The URL-fragment key distribution yields strong minimization of server knowledge, but security becomes contingent on link secrecy. Users must treat room URLs as bearer tokens. For high-stakes coordination, additional access control mechanisms (e.g., invite codes, participant public keys, or threshold sharing) may be warranted.
 
----
 
 ## 9. Conclusion
 
@@ -284,7 +275,6 @@ OpenSlots demonstrates that practical scheduling can be achieved without a trust
 
 Future work includes formal verification of key-derivation and nonce-handling logic, stronger access-control options beyond bearer-URL semantics, and systematic evaluation of metadata leakage under realistic network adversaries.
 
----
 
 ## Appendix A. Developer Considerations
 
@@ -294,7 +284,6 @@ While the core protocol is defined above, the following implementation details a
 * **JSON Readability vs. Size:** The bitmask encoding is designed for compactness. While Base64 encoding would save more space, we currently stick to a binary string in JSON for easier debugging during the alpha phase. Future versions may optimize this further.
 * **Key Derivation Best Practices:** OpenSlots derives separate sub-keys for `encryption` and `indexing` using **HKDF** (HMAC-based Key Derivation Function), avoiding key reuse across contexts.
 
----
 
 ## Appendix B. Landscape and Alternatives
 
@@ -327,7 +316,6 @@ There is significant academic work in **Private Set Intersection (PSI)** and **S
 | **Self-Hosted (Cal.com)** | Your DB | Access Control | The Admin |
 | **OpenSlots** | Public Relays | **End-to-End Encrypted** | **The URL / Client** |
 
----
 
 ## Appendix C. Code Quality Expectations
 
