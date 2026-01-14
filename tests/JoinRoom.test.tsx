@@ -162,7 +162,7 @@ test("JoinRoom shares via Web Share API and clears status", async () => {
 
   const originalSetTimeout = globalThis.setTimeout;
   const originalClearTimeout = globalThis.clearTimeout;
-  const setTimeoutMock = mock((callback: () => void) => {
+  const setTimeoutMock = mock((_callback: () => void) => {
     return 0 as unknown as number;
   });
 
