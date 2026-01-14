@@ -12,6 +12,7 @@ import {
   test,
 } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/preact";
+import type { Event as NostrEvent } from "nostr-tools";
 import { JoinRoom } from "../src/pages/JoinRoom";
 import {
   currentSelections,
@@ -30,7 +31,15 @@ afterAll(() => {
   mock.restore();
 });
 
-type SubscribeReturn = Awaited<ReturnType<typeof nostrUtils.subscribeToRoom>>;
+const createRoot = (id: string): NostrEvent => ({
+  id,
+  kind: 30078,
+  content: "",
+  created_at: 0,
+  pubkey: "mock-pubkey",
+  sig: "mock-sig",
+  tags: [],
+});
 
 const subscribeSpy = spyOn(nostrUtils, "subscribeToRoom");
 const publishSpy = spyOn(nostrUtils, "publishResponse");
@@ -52,10 +61,7 @@ beforeEach(() => {
 test("JoinRoom shows loading state then content", async () => {
   const stopMock = mock(() => {});
   subscribeSpy.mockResolvedValueOnce({
-    root: {
-      id: "root-1",
-      tags: [],
-    },
+    root: createRoot("root-1"),
     sub: { stop: stopMock },
     room: {
       title: "Test Room",
@@ -63,7 +69,7 @@ test("JoinRoom shows loading state then content", async () => {
       slotStart: 1736773200,
       slotMask: "111",
     },
-  } as unknown as SubscribeReturn);
+  });
 
   const { unmount } = render(<JoinRoom id="room-123" />);
 
@@ -95,10 +101,7 @@ test("JoinRoom shows missing state if no id", () => {
 
 test("JoinRoom renders participants and publishes response", async () => {
   subscribeSpy.mockResolvedValueOnce({
-    root: {
-      id: "root-1",
-      tags: [],
-    },
+    root: createRoot("root-1"),
     sub: { stop: mock(() => {}) },
     room: {
       title: "Team Sync",
@@ -106,7 +109,7 @@ test("JoinRoom renders participants and publishes response", async () => {
       slotStart: 1736773200,
       slotMask: "111",
     },
-  } as unknown as SubscribeReturn);
+  });
 
   render(<JoinRoom id="room-123" />);
 
@@ -140,10 +143,7 @@ test("JoinRoom renders participants and publishes response", async () => {
 
 test("JoinRoom shares via Web Share API and clears status", async () => {
   subscribeSpy.mockResolvedValueOnce({
-    root: {
-      id: "root-1",
-      tags: [],
-    },
+    root: createRoot("root-1"),
     sub: { stop: mock(() => {}) },
     room: {
       title: "Team Sync",
@@ -151,7 +151,7 @@ test("JoinRoom shares via Web Share API and clears status", async () => {
       slotStart: 1736773200,
       slotMask: "1",
     },
-  } as unknown as SubscribeReturn);
+  });
 
   const shareMock = mock(() => Promise.resolve());
   const originalShare = navigator.share;
@@ -161,18 +161,24 @@ test("JoinRoom shares via Web Share API and clears status", async () => {
   });
 
   const originalSetTimeout = globalThis.setTimeout;
-  const originalClearTimeout = globalThis.clearTimeout;
-  const setTimeoutMock = mock((_callback: () => void) => {
-    return 0 as unknown as number;
-  });
+  let capturedCallback: Parameters<typeof setTimeout>[0] | null = null;
+  const setTimeoutCalls = mock((..._args: Parameters<typeof setTimeout>) => {});
+  const setTimeoutMock: typeof setTimeout = Object.assign(
+    ((...args: Parameters<typeof setTimeout>) => {
+      setTimeoutCalls(...args);
+      [capturedCallback] = args;
+      return originalSetTimeout(() => {}, 0);
+    }) as typeof setTimeout,
+    {
+      __promisify__: originalSetTimeout.__promisify__,
+    },
+  );
 
   try {
     render(<JoinRoom id="room-123" />);
 
     expect(await screen.findByText("Team Sync")).toBeTruthy();
-
-    globalThis.setTimeout = setTimeoutMock as unknown as typeof setTimeout;
-    globalThis.clearTimeout = mock(() => {}) as unknown as typeof clearTimeout;
+    globalThis.setTimeout = setTimeoutMock;
 
     const shareButton = screen.getByText("Share room");
     await fireEvent.click(shareButton);
@@ -181,11 +187,10 @@ test("JoinRoom shares via Web Share API and clears status", async () => {
     expect(shareMock).toHaveBeenCalled();
     expect(screen.getByText("Shared")).toBeTruthy();
 
-    expect(setTimeoutMock).toHaveBeenCalledTimes(1);
-    const [capturedCallback] = setTimeoutMock.mock.calls[0] ?? [];
+    expect(setTimeoutCalls).toHaveBeenCalledTimes(1);
     expect(typeof capturedCallback).toBe("function");
     if (typeof capturedCallback === "function") {
-      capturedCallback();
+      (capturedCallback as () => void)();
     }
   } finally {
     Object.defineProperty(navigator, "share", {
@@ -193,16 +198,12 @@ test("JoinRoom shares via Web Share API and clears status", async () => {
       configurable: true,
     });
     globalThis.setTimeout = originalSetTimeout;
-    globalThis.clearTimeout = originalClearTimeout;
   }
 });
 
 test("JoinRoom falls back to clipboard sharing", async () => {
   subscribeSpy.mockResolvedValueOnce({
-    root: {
-      id: "root-1",
-      tags: [],
-    },
+    root: createRoot("root-1"),
     sub: { stop: mock(() => {}) },
     room: {
       title: "Team Sync",
@@ -210,7 +211,7 @@ test("JoinRoom falls back to clipboard sharing", async () => {
       slotStart: 1736773200,
       slotMask: "1",
     },
-  } as unknown as SubscribeReturn);
+  });
 
   const writeTextMock = mock(() => Promise.resolve());
   const originalShare = navigator.share;
@@ -246,10 +247,7 @@ test("JoinRoom falls back to clipboard sharing", async () => {
 
 test("JoinRoom reports share failure when clipboard write fails", async () => {
   subscribeSpy.mockResolvedValueOnce({
-    root: {
-      id: "root-1",
-      tags: [],
-    },
+    root: createRoot("root-1"),
     sub: { stop: mock(() => {}) },
     room: {
       title: "Team Sync",
@@ -257,7 +255,7 @@ test("JoinRoom reports share failure when clipboard write fails", async () => {
       slotStart: 1736773200,
       slotMask: "1",
     },
-  } as unknown as SubscribeReturn);
+  });
 
   const shareMock = mock(() => Promise.reject(new Error("blocked")));
   const writeTextMock = mock(() => Promise.reject(new Error("no-clipboard")));
