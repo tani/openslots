@@ -137,10 +137,7 @@ export function CreateRoom() {
         <div class="row justify-content-center">
           <div class="col-lg-8">
             <section class="mb-4 text-center">
-              <h1 class="display-4 fw-bold text-dark mb-3">
-                Secure Scheduling <br />
-                Without Accounts
-              </h1>
+              <h1 class="display-4 fw-bold text-dark mb-3">OpenSlots</h1>
               <p class="lead text-muted">
                 OpenSlots runs entirely in your browser. It creates a room key
                 on your device, encrypts the schedule, and publishes only
