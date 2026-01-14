@@ -2,7 +2,15 @@
 // Copyright (C) 2025-present Masaya Taniguchi
 
 /// <reference lib="dom" />
-import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  expect,
+  mock,
+  spyOn,
+  test,
+} from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/preact";
 import { JoinRoom } from "../src/pages/JoinRoom";
 import {
@@ -16,6 +24,10 @@ import * as nostrUtils from "../src/utils/nostr";
 
 afterEach(() => {
   cleanup();
+});
+
+afterAll(() => {
+  mock.restore();
 });
 
 type SubscribeReturn = Awaited<ReturnType<typeof nostrUtils.subscribeToRoom>>;

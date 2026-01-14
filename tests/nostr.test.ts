@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025-present Masaya Taniguchi
 
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 // 1. Mock NDK
 mock.module("@nostr-dev-kit/ndk", () => {
@@ -75,6 +83,10 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
       async (text: string, _key: string) => text.replace("encrypted-", ""),
     );
     spyOn(cryptoUtils, "getOrCreateRoomKey").mockReturnValue("mock-key");
+  });
+
+  afterAll(() => {
+    mock.restore();
   });
 
   it("should initialize NDK", async () => {

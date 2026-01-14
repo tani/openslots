@@ -245,8 +245,8 @@ flowchart TD
         Payload[Encrypted Content]
     end
 
-    RoomKey --> HMAC
     RoomID --> HMAC
+    RoomKey --> HMAC
     HMAC --> Index
 
     RoomKey --> NIP44
