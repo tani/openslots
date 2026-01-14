@@ -44,6 +44,19 @@ export function CreateRoom() {
 
   const selectedDateCount = useComputed(() => normalizedDates.value.length);
 
+  const slotsPerDay = useComputed(() => {
+    try {
+      const start = Temporal.PlainTime.from(startTime.value);
+      const end = Temporal.PlainTime.from(endTime.value);
+      const diffMinutes =
+        end.hour * 60 + end.minute - (start.hour * 60 + start.minute);
+      if (diffMinutes <= 0) return 0;
+      return Math.floor(diffMinutes / 30);
+    } catch {
+      return 0;
+    }
+  });
+
   const monthLabel = useComputed(() => {
     const monthNames = [
       "January",
@@ -71,19 +84,13 @@ export function CreateRoom() {
     return { leadingEmpty, days };
   });
 
-  const totalSlots = useComputed(() => {
-    try {
-      // Very rough estimate of slots based on time range and dates
-      const start = Temporal.PlainTime.from(startTime.value);
-      const end = Temporal.PlainTime.from(endTime.value);
-      const diffMinutes =
-        end.hour * 60 + end.minute - (start.hour * 60 + start.minute);
-      if (diffMinutes <= 0) return 0;
-      return Math.floor(diffMinutes / 30) * normalizedDates.value.length;
-    } catch {
-      return 0;
-    }
-  });
+  const totalSlots = useComputed(
+    () => slotsPerDay.value * selectedDateCount.value,
+  );
+
+  const canPublish = useComputed(
+    () => selectedDateCount.value > 0 && totalSlots.value > 0,
+  );
 
   const toggleDate = (value: string) => {
     const next = new Set(selectedDates.value);
@@ -101,6 +108,7 @@ export function CreateRoom() {
 
   const handleCreate = async (event: Event) => {
     event.preventDefault();
+    if (!canPublish.value) return;
     loading.value = true;
 
     try {
@@ -333,13 +341,13 @@ export function CreateRoom() {
               </div>
 
               <div class="form-text text-muted mb-3 fst-italic">
-                Preview: {totalSlots} slots will be encoded and encrypted.
+                Preview: {totalSlots} slots across {selectedDateCount} dates.
               </div>
 
               <button
                 type="submit"
                 class="btn btn-primary btn-lg w-100 fw-bold"
-                disabled={loading}
+                disabled={loading || !canPublish.value}
               >
                 {loading.value ? "Publishing..." : "Create room"}
               </button>
