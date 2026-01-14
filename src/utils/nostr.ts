@@ -141,7 +141,6 @@ export async function publishRoom(input: {
         // title/options hidden
       ],
       content: encryptedContent,
-      pubkey: getPublicKey(sk),
     },
     sk,
   );
@@ -185,7 +184,6 @@ export async function publishResponse(input: {
         ["t", "openslots"],
       ],
       content: encryptedContent,
-      pubkey,
     },
     sk,
   );
@@ -219,43 +217,45 @@ export async function subscribeToRoom(blindedRoomId: string, roomKey: string) {
     return null;
   }
 
-  const filters: Filter[] = [
-    { kinds: [30078], "#e": [root.id], "#t": ["openslots"] },
-  ];
-  const sub = pool.sub(getRelays(), filters, { closeOnEose: false });
+  const filter: Filter = {
+    kinds: [30078],
+    "#e": [root.id],
+    "#t": ["openslots"],
+  };
+  const sub = pool.subscribe(getRelays(), filter, {
+    onevent: async (event: NostrEvent) => {
+      // Avoid processing root event as response
+      if (event.id === root.id) return;
 
-  sub.on("event", async (event: NostrEvent) => {
-    // Avoid processing root event as response
-    if (event.id === root.id) return;
+      const responseTag = event.tags.find((t) => t[0] === "d")?.[1];
+      if (!responseTag) return;
 
-    const responseTag = event.tags.find((t) => t[0] === "d")?.[1];
-    if (!responseTag) return;
+      const expected = await deriveResponseId(event.pubkey, root.id, roomKey);
+      if (expected !== responseTag) return;
 
-    const expected = await deriveResponseId(event.pubkey, root.id, roomKey);
-    if (expected !== responseTag) return;
+      let name = "Anonymous";
+      let slots = new Set<string>();
 
-    let name = "Anonymous";
-    let slots = new Set<string>();
+      try {
+        const decoded = await decryptData(event.content, roomKey);
+        const data = JSON.parse(decoded) as { n?: string; o?: string };
+        name = data.n?.trim() || "Anonymous";
+        slots = new Set(decodeSlotMask(slotStart, data.o ?? ""));
+      } catch {
+        name = "Decryption Error";
+      }
 
-    try {
-      const decoded = await decryptData(event.content, roomKey);
-      const data = JSON.parse(decoded) as { n?: string; o?: string };
-      name = data.n?.trim() || "Anonymous";
-      slots = new Set(decodeSlotMask(slotStart, data.o ?? ""));
-    } catch {
-      name = "Decryption Error";
-    }
-
-    upsertResponse(event.pubkey, {
-      slots,
-      name,
-      timestamp: event.created_at ?? 0,
-    });
+      upsertResponse(event.pubkey, {
+        slots,
+        name,
+        timestamp: event.created_at ?? 0,
+      });
+    },
   });
 
   return {
     root,
-    sub: { stop: () => sub.unsub() },
+    sub: { stop: () => sub.close() },
     room: { title: roomTitle, slots, slotStart, slotMask },
   };
 }

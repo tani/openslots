@@ -11,8 +11,8 @@
   - `src/signals/` keeps global state (`store.ts`).
   - `src/utils/` includes Nostr + Temporal helpers.
 - `tests/` contains Bun tests (e.g., `tests/temporal.test.ts`).
-- `bun ./src/index.html` runs the dev server with SPA routing.
-- `bun build ./src/index.html --minify --outdir=dist` builds production assets to `dist/`.
+- `bun run scripts/dev.ts` builds and serves the SPA with SCSS support.
+- `bun run scripts/build.ts` builds production assets to `dist/`.
 - `uno.config.ts` configures UnoCSS.
 
 ## Build, Test, and Development Commands

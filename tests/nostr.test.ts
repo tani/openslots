@@ -16,9 +16,8 @@ mock.module("nostr-tools", () => {
   class MockSimplePool {
     get = mock(() => Promise.resolve(null));
     publish = mock(() => Promise.resolve());
-    sub = mock(() => ({
-      on: mock(),
-      unsub: mock(),
+    subscribe = mock(() => ({
+      close: mock(),
     }));
     close = mock(() => {});
   }
@@ -32,9 +31,9 @@ mock.module("nostr-tools", () => {
       created_at: number;
       tags: string[][];
       content: string;
-      pubkey: string;
     }) => ({
       ...event,
+      pubkey: "mock-pubkey",
       id: "mock-id",
       sig: "mock-sig",
     }),
@@ -45,6 +44,7 @@ mock.module("nostr-tools", () => {
   };
 });
 
+import type { Event as NostrEvent } from "nostr-tools";
 import * as nostrTools from "nostr-tools";
 import * as store from "../src/signals/store";
 import * as cryptoUtils from "../src/utils/crypto";
@@ -239,35 +239,34 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     };
     const getMock = pool.get as unknown as ReturnType<typeof mock>;
     getMock.mockResolvedValue(rootEvent);
-    const subMock = pool.sub as unknown as ReturnType<typeof mock>;
-    subMock.mockImplementation(() => {
-      const on = mock();
-      return { on, unsub: mock() };
-    });
+    const subMock = pool.subscribe as unknown as ReturnType<typeof mock>;
 
     const result = await subscribeToRoom("blinded-root-1", MOCK_KEY);
     if (!result) throw new Error("Expected room result");
 
-    const subscription = subMock.mock.results[0]?.value;
-    const onHandler = subscription?.on;
-    const onCall = onHandler?.mock.calls.find(
-      (call: unknown[]) => call[0] === "event",
-    );
-    const emit = onCall?.[1];
+    const subscription = subMock.mock.results[0]?.value as
+      | { close: ReturnType<typeof mock> }
+      | undefined;
+    const params = subMock.mock.calls[0]?.[2] as
+      | { onevent?: (event: NostrEvent) => void }
+      | undefined;
+    const emit = params?.onevent;
     if (!emit) throw new Error("Missing event handler");
 
     await emit({
       id: "response-1",
+      kind: 30078,
       pubkey: "attacker-pubkey",
       tags: [["d", "response-victim-root-1"]],
       content: `encrypted-${JSON.stringify({ n: "Eve", o: "1" })}`,
       created_at: 100,
+      sig: "sig",
     });
 
     await Promise.resolve();
     expect(store.upsertResponse).not.toHaveBeenCalled();
     result.sub.stop();
-    expect(subscription?.unsub).toHaveBeenCalled();
+    expect(subscription?.close).toHaveBeenCalled();
   });
 
   it("ignores responses without d tags", async () => {
@@ -279,29 +278,25 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     };
     const getMock = pool.get as unknown as ReturnType<typeof mock>;
     getMock.mockResolvedValue(rootEvent);
-    const subMock = pool.sub as unknown as ReturnType<typeof mock>;
-    subMock.mockImplementation(() => {
-      const on = mock();
-      return { on, unsub: mock() };
-    });
+    const subMock = pool.subscribe as unknown as ReturnType<typeof mock>;
 
     const result = await subscribeToRoom("blinded-root-1", MOCK_KEY);
     if (!result) throw new Error("Expected room result");
 
-    const subscription = subMock.mock.results[0]?.value;
-    const onHandler = subscription?.on;
-    const onCall = onHandler?.mock.calls.find(
-      (call: unknown[]) => call[0] === "event",
-    );
-    const emit = onCall?.[1];
+    const params = subMock.mock.calls[0]?.[2] as
+      | { onevent?: (event: NostrEvent) => void }
+      | undefined;
+    const emit = params?.onevent;
     if (!emit) throw new Error("Missing event handler");
 
     await emit({
       id: "response-2",
+      kind: 30078,
       pubkey: "attacker-pubkey",
       tags: [],
       content: `encrypted-${JSON.stringify({ n: "Eve", o: "1" })}`,
       created_at: 101,
+      sig: "sig",
     });
 
     await Promise.resolve();
@@ -340,29 +335,25 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     };
     const getMock = pool.get as unknown as ReturnType<typeof mock>;
     getMock.mockResolvedValue(rootEvent);
-    const subMock = pool.sub as unknown as ReturnType<typeof mock>;
-    subMock.mockImplementation(() => {
-      const on = mock();
-      return { on, unsub: mock() };
-    });
+    const subMock = pool.subscribe as unknown as ReturnType<typeof mock>;
 
     const result = await subscribeToRoom("blinded-root-1", MOCK_KEY);
     if (!result) throw new Error("Expected room result");
 
-    const subscription = subMock.mock.results[0]?.value;
-    const onHandler = subscription?.on;
-    const onCall = onHandler?.mock.calls.find(
-      (call: unknown[]) => call[0] === "event",
-    );
-    const emit = onCall?.[1];
+    const params = subMock.mock.calls[0]?.[2] as
+      | { onevent?: (event: NostrEvent) => void }
+      | undefined;
+    const emit = params?.onevent;
     if (!emit) throw new Error("Missing event handler");
 
     await emit({
       id: "response-1",
+      kind: 30078,
       pubkey: "user-1",
       tags: [["d", "response-user-1-root-1"]],
       content: `encrypted-${JSON.stringify({ n: "Alice", o: "1" })}`,
       created_at: 100,
+      sig: "sig",
     });
 
     await Promise.resolve();
@@ -382,29 +373,25 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
     };
     const getMock = pool.get as unknown as ReturnType<typeof mock>;
     getMock.mockResolvedValue(rootEvent);
-    const subMock = pool.sub as unknown as ReturnType<typeof mock>;
-    subMock.mockImplementation(() => {
-      const on = mock();
-      return { on, unsub: mock() };
-    });
+    const subMock = pool.subscribe as unknown as ReturnType<typeof mock>;
 
     const result = await subscribeToRoom("blinded-root-1", MOCK_KEY);
     if (!result) throw new Error("Expected room result");
 
-    const subscription = subMock.mock.results[0]?.value;
-    const onHandler = subscription?.on;
-    const onCall = onHandler?.mock.calls.find(
-      (call: unknown[]) => call[0] === "event",
-    );
-    const emit = onCall?.[1];
+    const params = subMock.mock.calls[0]?.[2] as
+      | { onevent?: (event: NostrEvent) => void }
+      | undefined;
+    const emit = params?.onevent;
     if (!emit) throw new Error("Missing event handler");
 
     await emit({
       id: "response-3",
+      kind: 30078,
       pubkey: "user-2",
       tags: [["d", "response-user-2-root-1"]],
       content: "encrypted-{bad",
       created_at: 200,
+      sig: "sig",
     });
 
     await Promise.resolve();
