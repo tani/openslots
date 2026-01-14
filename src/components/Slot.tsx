@@ -19,17 +19,17 @@ export function Slot(props: {
   const total = useComputed(() => props.participantCount.value || 1);
 
   const background = useComputed(() => {
-    const opacity = total.value > 0 ? count.value / total.value : 0;
+    const intensity = total.value > 0 ? count.value / total.value : 0;
     if (selected.value) {
-      return "rgba(34, 197, 94, 0.8)";
+      return "rgba(22, 163, 74, 0.85)";
     }
     const baseOpacity =
       count.value === 0
         ? props.rowShade
-          ? 0.06
-          : 0.03
-        : Math.max(0.12, opacity);
-    const baseColor = count.value === 0 ? "15, 23, 42" : "34, 197, 94";
+          ? 0.08
+          : 0.04
+        : 0.2 + 0.5 * Math.min(1, intensity);
+    const baseColor = count.value === 0 ? "15, 23, 42" : "22, 163, 74";
     return `rgba(${baseColor}, ${baseOpacity})`;
   });
 
