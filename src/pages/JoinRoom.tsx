@@ -189,11 +189,11 @@ export function JoinRoom(props: { id?: string }) {
         ) : (
           <div class="row g-4">
             <div class="col-lg-9">
-            <Grid
-              dates={grid.value.dateList}
-              times={grid.value.timeList}
-              slotByLocalKey={grid.value.slotByLocalKey}
-            />
+              <Grid
+                dates={grid.value.dateList}
+                times={grid.value.timeList}
+                slotByLocalKey={grid.value.slotByLocalKey}
+              />
             </div>
             <div class="col-lg-3">
               <Sidebar title="Your response">

@@ -40,9 +40,7 @@ test("Grid renders dates and times", () => {
     ["2026-01-14|10:00", "slot-2"],
   ]);
 
-  render(
-    <Grid dates={dates} times={times} slotByLocalKey={slotByLocalKey} />,
-  );
+  render(<Grid dates={dates} times={times} slotByLocalKey={slotByLocalKey} />);
 
   expect(screen.getByText("2026-01-13")).toBeTruthy();
   expect(screen.getByText("2026-01-14")).toBeTruthy();

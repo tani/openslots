@@ -22,6 +22,7 @@
   - Example: `PORT=3001 bun run dev`.
 - `bun run build` builds assets to `dist/`.
 - `bun test` runs unit tests in `tests/`.
+- Always run `bun run lint`, `bun run typecheck`, `bun run build`, and `bun test` to validate changes.
 
 ## Coding Style & Naming Conventions
 

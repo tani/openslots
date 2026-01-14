@@ -5,13 +5,13 @@
 import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/preact";
 import { JoinRoom } from "../src/pages/JoinRoom";
-import * as nostrUtils from "../src/utils/nostr";
 import {
   currentSelections,
   currentUserPubkey,
   responses,
   upsertResponse,
 } from "../src/signals/store";
+import * as nostrUtils from "../src/utils/nostr";
 
 // Mock crypto
 mock.module("../src/utils/crypto", () => ({

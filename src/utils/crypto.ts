@@ -21,7 +21,10 @@ const HKDF_SALT = "openslots-hkdf-salt";
 const HKDF_INFO_ENCRYPT = "openslots:encryption";
 const HKDF_INFO_HMAC = "openslots:hmac";
 
-async function deriveHkdfBits(roomKey: string, info: string): Promise<Uint8Array> {
+async function deriveHkdfBits(
+  roomKey: string,
+  info: string,
+): Promise<Uint8Array> {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     "raw",

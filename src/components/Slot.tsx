@@ -12,9 +12,7 @@ export function Slot(props: {
   onMouseDown: (id: string) => void;
   onMouseEnter: (id: string) => void;
 }) {
-  const count = useComputed(
-    () => props.heatmap.value.get(props.slotId) ?? 0,
-  );
+  const count = useComputed(() => props.heatmap.value.get(props.slotId) ?? 0);
   const selected = useComputed(() =>
     props.currentSelections.value.has(props.slotId),
   );
@@ -35,13 +33,39 @@ export function Slot(props: {
     return `rgba(${baseColor}, ${baseOpacity})`;
   });
 
+  const handleHighlight = (event: MouseEvent | FocusEvent) => {
+    const target = event.currentTarget as HTMLButtonElement | null;
+    if (target) {
+      target.style.borderColor = "rgba(17, 18, 15, 0.3)";
+    }
+  };
+
+  const handleUnhighlight = (event: MouseEvent | FocusEvent) => {
+    const target = event.currentTarget as HTMLButtonElement | null;
+    if (target) {
+      target.style.borderColor = "rgba(17, 18, 15, 0.1)";
+    }
+  };
+
   return (
     <button
       type="button"
-      class="slot-button"
-      style={{ background: background.value }}
+      class="w-100"
+      style={{
+        height: "1.5rem",
+        border: "1px solid rgba(17, 18, 15, 0.1)",
+        cursor: "pointer",
+        transition: "all 0.2s",
+        background: background.value,
+      }}
+      onFocus={handleHighlight}
+      onBlur={handleUnhighlight}
       onMouseDown={() => props.onMouseDown(props.slotId)}
-      onMouseEnter={() => props.onMouseEnter(props.slotId)}
+      onMouseEnter={(event) => {
+        handleHighlight(event);
+        props.onMouseEnter(props.slotId);
+      }}
+      onMouseLeave={handleUnhighlight}
     />
   );
 }

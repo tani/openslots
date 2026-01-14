@@ -118,7 +118,11 @@ export async function publishResponse(input: {
   event.kind = 30030;
 
   const pubkey = await getMyPubkey();
-  const responseId = await deriveResponseId(pubkey, input.rootId, input.roomKey);
+  const responseId = await deriveResponseId(
+    pubkey,
+    input.rootId,
+    input.roomKey,
+  );
   const selectionMask = buildSelectionMask(
     input.slotStart,
     input.slotCount,

@@ -2,7 +2,11 @@
 // Copyright (C) 2025-present Masaya Taniguchi
 
 import { describe, expect, it } from "bun:test";
-import { buildSelectionMask, buildSlotMask, decodeSlotMask } from "../src/utils/slots";
+import {
+  buildSelectionMask,
+  buildSlotMask,
+  decodeSlotMask,
+} from "../src/utils/slots";
 
 describe("slot utils", () => {
   it("builds empty mask when no slots are provided", () => {
@@ -14,7 +18,11 @@ describe("slot utils", () => {
   });
 
   it("builds selection mask with out-of-range slots ignored", () => {
-    const mask = buildSelectionMask(1000, 2, new Set(["1000", "2800", "10000"]));
+    const mask = buildSelectionMask(
+      1000,
+      2,
+      new Set(["1000", "2800", "10000"]),
+    );
     expect(mask).toBe("11");
   });
 });

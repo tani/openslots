@@ -12,6 +12,7 @@ const html = `<!doctype html>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>OpenSlots: A Trustless, Privacy-Preserving Scheduling Protocol over Nostr</title>
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png" />
     <link rel="stylesheet" href="/index.css" />
   </head>
   <body>
@@ -26,30 +27,9 @@ async function writeStaticAssets() {
     "node_modules/bootswatch/dist/brite/bootstrap.min.css",
   ).text();
 
-  const customCss = `
-    /* Custom styles for OpenSlots */
-    :root {
-      --ink: #11120f;
-      --paper: #f5f1ea;
-      --moss: #2b5f3f;
-      --sand: #d7c9a8;
-    }
-
-    .slot-button {
-      width: 100%;
-      height: 1.5rem;
-      border: 1px solid rgba(17, 18, 15, 0.1);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .slot-button:hover {
-      border-color: rgba(17, 18, 15, 0.3);
-    }
-  `;
-
   await Bun.write(join(OUTDIR, "index.html"), html);
-  await Bun.write(join(OUTDIR, "index.css"), bootswatchCss + customCss);
+  await Bun.write(join(OUTDIR, "index.css"), bootswatchCss);
+  await Bun.write(join(OUTDIR, "favicon.png"), Bun.file("assets/favicon.png"));
 }
 
 export async function buildOnce({

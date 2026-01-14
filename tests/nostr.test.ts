@@ -52,8 +52,8 @@ mock.module("../src/signals/store", () => ({
   upsertResponse: mock(),
 }));
 
-import { decryptData, deriveBlindedId } from "../src/utils/crypto";
 import { upsertResponse } from "../src/signals/store";
+import { decryptData, deriveBlindedId } from "../src/utils/crypto";
 
 // Import local code
 import {
@@ -201,7 +201,9 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
 
     const subscription = subscribeMock.mock.results[0]?.value;
     const onHandler = subscription?.on;
-    const onCall = onHandler?.mock.calls.find((call: unknown[]) => call[0] === "event");
+    const onCall = onHandler?.mock.calls.find(
+      (call: unknown[]) => call[0] === "event",
+    );
     const emit = onCall?.[1];
     if (!emit) throw new Error("Missing event handler");
 
@@ -237,7 +239,9 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
 
     const subscription = subscribeMock.mock.results[0]?.value;
     const onHandler = subscription?.on;
-    const onCall = onHandler?.mock.calls.find((call: unknown[]) => call[0] === "event");
+    const onCall = onHandler?.mock.calls.find(
+      (call: unknown[]) => call[0] === "event",
+    );
     const emit = onCall?.[1];
     if (!emit) throw new Error("Missing event handler");
 
@@ -296,7 +300,9 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
 
     const subscription = subscribeMock.mock.results[0]?.value;
     const onHandler = subscription?.on;
-    const onCall = onHandler?.mock.calls.find((call: unknown[]) => call[0] === "event");
+    const onCall = onHandler?.mock.calls.find(
+      (call: unknown[]) => call[0] === "event",
+    );
     const emit = onCall?.[1];
     if (!emit) throw new Error("Missing event handler");
 
@@ -336,7 +342,9 @@ describe("Nostr Utilities (Crypto Integrated)", () => {
 
     const subscription = subscribeMock.mock.results[0]?.value;
     const onHandler = subscription?.on;
-    const onCall = onHandler?.mock.calls.find((call: unknown[]) => call[0] === "event");
+    const onCall = onHandler?.mock.calls.find(
+      (call: unknown[]) => call[0] === "event",
+    );
     const emit = onCall?.[1];
     if (!emit) throw new Error("Missing event handler");
 

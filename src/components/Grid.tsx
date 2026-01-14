@@ -85,7 +85,7 @@ export function Grid(props: {
                 class={`px-3 py-1 small text-muted border-bottom border-light border-end${rowShadeClass}`}
                 style="position: sticky; left: 0; z-index: 1;"
               >
-              {time}
+                {time}
               </div>
               {props.dates.map((date) => {
                 const slotId = props.slotByLocalKey.get(`${date}|${time}`);
