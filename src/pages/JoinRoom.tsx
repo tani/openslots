@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025-present Masaya Taniguchi
 
-import { Temporal } from "@js-temporal/polyfill";
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals";
 import type { Event as NostrEvent } from "nostr-tools";
+import { Temporal } from "temporal-polyfill-lite";
 import { AppHeader } from "../components/AppHeader";
 import { Grid } from "../components/Grid";
 import { Sidebar } from "../components/Sidebar";

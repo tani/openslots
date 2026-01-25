@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025-present Masaya Taniguchi
 
-import { Temporal } from "@js-temporal/polyfill";
+import { Temporal } from "temporal-polyfill-lite";
 
 export function generateSlots(
   date: string,
@@ -25,7 +25,7 @@ export function generateSlots(
 
   const slots: string[] = [];
   while (Temporal.ZonedDateTime.compare(cursor, endZdt) < 0) {
-    slots.push(String(cursor.epochSeconds));
+    slots.push(String(cursor.epochNanoseconds / 1000000000n));
     cursor = cursor.add({ minutes: 30 });
   }
 
@@ -36,11 +36,11 @@ export function toLocalDisplay(
   epoch: string,
   userTz: string,
 ): Temporal.PlainTime {
-  const instant = Temporal.Instant.fromEpochSeconds(Number(epoch));
+  const instant = new Temporal.Instant(BigInt(epoch) * 1000000000n);
   return instant.toZonedDateTimeISO(userTz).toPlainTime();
 }
 
 export function toLocalDate(epoch: string, userTz: string): Temporal.PlainDate {
-  const instant = Temporal.Instant.fromEpochSeconds(Number(epoch));
+  const instant = new Temporal.Instant(BigInt(epoch) * 1000000000n);
   return instant.toZonedDateTimeISO(userTz).toPlainDate();
 }

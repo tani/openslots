@@ -2,7 +2,7 @@
 // Copyright (C) 2025-present Masaya Taniguchi
 
 import { describe, expect, it } from "bun:test";
-import { Temporal } from "@js-temporal/polyfill";
+import { Temporal } from "temporal-polyfill-lite";
 import {
   generateSlots,
   toLocalDate,
@@ -14,7 +14,7 @@ describe("temporal utils", () => {
     const slots = generateSlots("2024-01-01", "09:00", "10:00", "UTC");
     expect(slots.length).toBe(2);
     const times = slots.map((epoch) =>
-      Temporal.Instant.fromEpochSeconds(Number(epoch))
+      new Temporal.Instant(BigInt(epoch) * 1000000000n)
         .toZonedDateTimeISO("UTC")
         .toPlainTime()
         .toString(),
@@ -38,7 +38,7 @@ describe("temporal utils", () => {
         day: 1,
         hour: 0,
         minute: 0,
-      }).epochSeconds,
+      }).epochNanoseconds / 1000000000n,
     );
     const local = toLocalDisplay(epoch, "Asia/Tokyo");
     expect(local.toString()).toBe("09:00:00");

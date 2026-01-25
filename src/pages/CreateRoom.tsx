@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025-present Masaya Taniguchi
 
-import { Temporal } from "@js-temporal/polyfill";
 import { useComputed, useSignal } from "@preact/signals";
 import { useLocation } from "preact-iso";
+import { Temporal } from "temporal-polyfill-lite";
 import { AppHeader } from "../components/AppHeader";
 import { DateCalendar } from "../components/DateCalendar";
 import { SelectedDatesList } from "../components/SelectedDatesList";

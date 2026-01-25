@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025-present Masaya Taniguchi
 
-import { Temporal } from "@js-temporal/polyfill";
 import type { Signal } from "@preact/signals";
+import { Temporal } from "temporal-polyfill-lite";
 
 type CalendarDays = {
   leadingEmpty: number;

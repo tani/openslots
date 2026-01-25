@@ -84,5 +84,5 @@ test("Slot background changes based on selection", () => {
   );
 
   const btn = screen.getByRole("button") as HTMLElement;
-  expect(btn.style.background).toContain("rgba(34, 197, 94, 0.8)");
+  expect(btn.style.background).toContain("rgba(22, 163, 74, 0.85)");
 });
